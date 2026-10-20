@@ -5,7 +5,5 @@
 
 int main(void)
 {
-	fprintf(stdout, "Hello World: %d\n", foo());
-
 	return EXIT_SUCCESS;
 }
