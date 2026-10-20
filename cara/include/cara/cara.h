@@ -1,8 +1,6 @@
 #ifndef CARA_H_INCLUDED
 #define CARA_H_INCLUDED
 
-#include <stdint.h>
-
 #include "cara/cara_config.h"
 #include "cara/cara_app.h"
 #include "cara/cara_status.h"

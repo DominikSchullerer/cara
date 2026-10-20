@@ -47,6 +47,13 @@ target_link_libraries(cara_tests
         cara_internal
 )
 
+# Examples
+option(CARA_BUILD_EXAMPLES "Build CARA examples" ON)
+
+if(CARA_BUILD_EXAMPLES)
+    add_subdirectory(examples)
+endif()
+
 enable_warnings(cara)
 enable_warnings(cara_manual)
 enable_warnings(cara_tests)
