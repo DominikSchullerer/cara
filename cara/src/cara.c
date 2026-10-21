@@ -8,6 +8,7 @@ cara_status_t cara_create(const cara_config_t *config, cara_t **p_cara)
 	if (!config || !p_cara) {
 		return CARA_STATUS_INVALID_ARGUMENT;
 	}
+	*p_cara = NULL;
 
 	cara_t *cara = calloc(1, sizeof(*cara));
 	if (!cara) {

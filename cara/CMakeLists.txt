@@ -1,7 +1,14 @@
 add_library(cara STATIC
     src/cara.c
-    src/platform/cara_platform.c
- "src/platform/cara_platform_internal.h")
+)
+
+if(WIN32)
+    target_sources(cara PRIVATE
+        src/platform/windows/cara_win32.c
+    )
+else()
+    message(FATAL_ERROR "Unsupported platform")
+endif()
 
 target_include_directories(cara
     PUBLIC

@@ -5,6 +5,7 @@
 
 struct cara_platform_t {
 	uint64_t frequency;
+	uint64_t start_timer;
 };
 
 
