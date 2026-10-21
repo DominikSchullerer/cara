@@ -1,6 +1,7 @@
 add_library(cara STATIC
     src/cara.c
-)
+    src/platform/cara_platform.c
+ "src/platform/cara_platform_internal.h")
 
 target_include_directories(cara
     PUBLIC
