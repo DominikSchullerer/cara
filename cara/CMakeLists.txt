@@ -2,6 +2,14 @@ add_library(cara STATIC
     src/cara.c
 )
 
+if(WIN32)
+    target_sources(cara PRIVATE
+        src/platform/windows/cara_win32.c
+    )
+else()
+    message(FATAL_ERROR "Unsupported platform")
+endif()
+
 target_include_directories(cara
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include

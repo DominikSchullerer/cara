@@ -11,7 +11,7 @@ typedef cara_status_t (*cara_app_init_fn)(cara_app_t *app);
 
 typedef cara_status_t (*cara_app_update_fn)(
     cara_app_t *app,
-    float delta_time
+    double delta_time
 );
 
 typedef cara_status_t (*cara_app_render_fn)(

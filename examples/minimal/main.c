@@ -21,7 +21,7 @@ static cara_status_t app_init(cara_app_t *app) {
 
 static cara_status_t app_update(
     cara_app_t *app,
-    float delta_time
+    double delta_time
 ) {
     app_data_t *data = app->data;
 
@@ -32,6 +32,17 @@ static cara_status_t app_update(
     if (data->update_count >= 120) {
         cara_request_quit(data->cara);
     }
+
+    return CARA_STATUS_OK;
+}
+
+static cara_status_t app_render(
+    cara_app_t *app,
+    const cara_pixbuf_t **out_buffer
+) {
+    app_data_t *data = app->data;
+    *out_buffer = NULL;
+    fprintf(stdout, "Update count: %u\n", data->update_count);
 
     return CARA_STATUS_OK;
 }
@@ -48,8 +59,8 @@ static void app_shutdown(cara_app_t *app) {
 
 int main(void) {
     cara_config_t config = {
-        .ups = 0,
-        .fps = 0
+        .ups = 120,
+        .fps = 30
     };
 
     cara_t *cara = NULL;
@@ -68,7 +79,7 @@ int main(void) {
         .data = &data,
         .init = app_init,
         .update = app_update,
-        .render = NULL,
+        .render = app_render,
         .shutdown = app_shutdown
     };
 
