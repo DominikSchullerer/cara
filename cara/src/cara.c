@@ -16,6 +16,17 @@ struct cara_timer_t {
 	double render_accumulator;
 };
 
+
+static cara_status_t cara_start_app(
+	cara_t *cara,
+	cara_app_t *app
+);
+
+static void cara_shutdown_app(
+	cara_t *cara,
+	cara_app_t *app
+);
+
 static cara_status_t cara_init_timer(
 	cara_t *cara, 
 	cara_timer_t *timer
@@ -38,6 +49,11 @@ static cara_status_t cara_do_render(
 	cara_timer_t *timer
 );
 
+static cara_status_t cara_do_mainloop(
+	cara_t *cara,
+	cara_app_t *app
+);
+
 
 cara_status_t cara_create(const cara_config_t *config, cara_t **p_cara)
 {
@@ -55,17 +71,13 @@ cara_status_t cara_create(const cara_config_t *config, cara_t **p_cara)
 		return CARA_STATUS_OUT_OF_MEMORY;
 	}
 
-	cara_status_t status = CARA_STATUS_OK;
-
-	status = cara_platform_create(&cara->platform);
+	cara_status_t status = cara_platform_create(&cara->platform);
 	if (status != CARA_STATUS_OK) {
 		free(cara);
 		return status;
 	}
 
 	cara->config = *config;
-	cara->quit_requested = false;
-	cara->running = false;
 
 	*p_cara = cara;
 
@@ -105,53 +117,38 @@ cara_status_t cara_run(cara_t *cara, cara_app_t *app)
 		return CARA_STATUS_INVALID_ARGUMENT;
 	}
 
-
 	cara_status_t status = CARA_STATUS_OK;
 
+	status = cara_start_app(cara, app);
+	if (status != CARA_STATUS_OK) {
+		cara->running = false;
+		return status;
+	}
+
+	status = cara_do_mainloop(cara, app);
+
+	cara_shutdown_app(cara, app);
+
+	return status;
+}
+
+
+static cara_status_t cara_start_app(
+	cara_t *cara,
+	cara_app_t *app
+) {
 	cara->running = true;
 	cara->quit_requested = false;
 
+	return app->init(app);
+}
 
-	status = app->init(app);
-	if (status != CARA_STATUS_OK) {
-		cara->running = false;
-		return status;
-	}
-
-	cara_timer_t timer = {0};
-	status = cara_init_timer(cara, &timer);
-	if (status != CARA_STATUS_OK) {
-		app->shutdown(app);
-		cara->running = false;
-		return status;
-	}
-
-	while (!cara->quit_requested) {
-		status = cara_update_timer(cara, &timer);
-		if (status != CARA_STATUS_OK) {
-			break;
-		}
-
-		status = cara_do_update(cara, app, &timer);
-		if (status != CARA_STATUS_OK || cara->quit_requested) {
-			break;
-		}
-
-		status = cara_do_render(cara, app, &timer);
-		if (status != CARA_STATUS_OK || cara->quit_requested) {
-			break;
-		}
-
-		// status = cara_platform_wait(cara->platform, 0.001);
-		if (status != CARA_STATUS_OK || cara->quit_requested) {
-			break;
-		}
-	}
-
+static void cara_shutdown_app(
+	cara_t *cara,
+	cara_app_t *app
+) {
 	cara->running = false;
 	app->shutdown(app);
-
-	return status;
 }
 
 
@@ -167,21 +164,14 @@ static cara_status_t cara_init_timer(cara_t *cara, cara_timer_t *timer)
 	timer->update_accumulator = 0.0;
 	timer->render_accumulator = 0.0;
 
-	if (cara->config.ups == 0) {
-		timer->update_dt = 0.0;
-	}
-	else {
-		timer->update_dt = 1.0 / (double) cara->config.ups;
-	}
+	timer->update_dt = cara->config.ups > 0
+		? 1.0 / (double) cara->config.ups
+		: 0.0;
+	timer->render_dt = cara->config.fps > 0
+		? 1.0 / (double) cara->config.fps
+		: 0.0;
 
-	if (cara->config.fps == 0) {
-		timer->render_dt = 0.0;
-	}
-	else {
-		timer->render_dt = 1.0 / (double) cara->config.fps;
-	}
-
-	return status;
+	return CARA_STATUS_OK;
 }
 
 static cara_status_t cara_update_timer(
@@ -199,7 +189,7 @@ static cara_status_t cara_update_timer(
 	timer->update_accumulator += timer->dt;
 	timer->render_accumulator += timer->dt;
 
-	return status;
+	return CARA_STATUS_OK;;
 }
 
 static cara_status_t cara_do_update(
@@ -265,6 +255,43 @@ static cara_status_t cara_do_render(
 	if (pixbuf) {
 		// ToDo: Draw to Screen
 		;
+	}
+
+	return status;
+}
+
+static cara_status_t cara_do_mainloop(
+	cara_t *cara,
+	cara_app_t *app
+) {
+	cara_status_t status = CARA_STATUS_OK;
+	cara_timer_t timer = {0};
+
+	status = cara_init_timer(cara, &timer);
+	if (status != CARA_STATUS_OK) {
+		return status;
+	}
+
+	while (!cara->quit_requested) {
+		status = cara_update_timer(cara, &timer);
+		if (status != CARA_STATUS_OK) {
+			return status;
+		}
+
+		status = cara_do_update(cara, app, &timer);
+		if (status != CARA_STATUS_OK || cara->quit_requested) {
+			return status;
+		}
+
+		status = cara_do_render(cara, app, &timer);
+		if (status != CARA_STATUS_OK || cara->quit_requested) {
+			return status;
+		}
+
+		status = cara_platform_wait(cara->platform, 0.001);
+		if (status != CARA_STATUS_OK || cara->quit_requested) {
+			return status;
+		}
 	}
 
 	return status;
