@@ -6,9 +6,9 @@
 typedef struct cara_config_t cara_config_t;
 
 struct cara_config_t {
-	// updates per second, 0 := unlimited
+	// updates per second, 0 := unlimited -> not yet implemented
 	uint32_t ups;
-	// frames per second, 0 := unlimited
+	// frames per second, 0 := unlimited -> not yet implemented
 	uint32_t fps;
 };
 

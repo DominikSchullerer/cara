@@ -14,5 +14,10 @@ cara_status_t cara_platform_get_time(
     double *p_time
 );
 
+cara_status_t cara_platform_wait(
+    cara_platform_t *platform,
+    double wait_time
+);
+
 
 #endif // !CARA_PLATFORM_H_INCLUDED

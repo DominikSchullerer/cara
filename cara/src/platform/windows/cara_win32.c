@@ -91,3 +91,23 @@ static cara_status_t init_timer(cara_platform_t *platform)
 
 	return CARA_STATUS_OK;
 }
+
+cara_status_t cara_platform_wait(
+	cara_platform_t *platform,
+	double wait_time
+) {
+	if (!platform || wait_time < 0.0) {
+		return CARA_STATUS_INVALID_ARGUMENT;
+	}
+
+	if (wait_time == 0.0) {
+		return CARA_STATUS_OK;
+	}
+
+	DWORD milliseconds = (DWORD) (wait_time * 1000.0);
+	if (milliseconds > 0) {
+		Sleep(milliseconds);
+	}
+
+	return CARA_STATUS_OK;
+}
