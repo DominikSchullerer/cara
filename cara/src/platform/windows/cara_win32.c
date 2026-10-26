@@ -4,7 +4,7 @@
 
 
 #include "platform/include/cara_platform.h"
-#include "platform/cara_platform_internal.h"
+#include "platform/windows/cara_win32_internal.h"
 
 
 static cara_status_t init_timer(cara_platform_t *platform);
@@ -30,6 +30,17 @@ cara_status_t cara_platform_create(cara_platform_t **p_platform)
 		return status;
 	}
 
+	platform->wait_timer = CreateWaitableTimerExW(
+		NULL,
+		NULL,
+		CREATE_WAITABLE_TIMER_HIGH_RESOLUTION,
+		TIMER_MODIFY_STATE | SYNCHRONIZE
+	);
+	if (!platform->wait_timer) {
+		free(platform);
+		return CARA_STATUS_PLATFORM_ERROR;
+	}
+
 	*p_platform = platform;
 
 	return status;
@@ -37,6 +48,11 @@ cara_status_t cara_platform_create(cara_platform_t **p_platform)
 
 void cara_platform_destroy(cara_platform_t *platform)
 {
+	if (!platform) {
+		return;
+	}
+
+	CloseHandle(platform->wait_timer);
 	free(platform);
 }
 
@@ -104,9 +120,23 @@ cara_status_t cara_platform_wait(
 		return CARA_STATUS_OK;
 	}
 
-	DWORD milliseconds = (DWORD) (wait_time * 1000.0);
-	if (milliseconds > 0) {
-		Sleep(milliseconds);
+	LARGE_INTEGER due_time = {0};
+	due_time.QuadPart = -(LONGLONG) (wait_time * 10000000.0);
+
+	if (!SetWaitableTimer(
+		platform->wait_timer,
+		&due_time,
+		0,
+		NULL,
+		NULL,
+		FALSE)) {
+		return CARA_STATUS_PLATFORM_ERROR;
+	}
+
+	DWORD result = WaitForSingleObject(platform->wait_timer, INFINITE);
+	
+	if (result != WAIT_OBJECT_0) {
+		return CARA_STATUS_PLATFORM_ERROR;
 	}
 
 	return CARA_STATUS_OK;
