@@ -5,6 +5,7 @@ add_library(cara STATIC
 if(WIN32)
     target_sources(cara PRIVATE
         src/platform/windows/cara_win32.c
+        src/platform/windows/cara_win32_window.c
     )
 else()
     message(FATAL_ERROR "Unsupported platform")

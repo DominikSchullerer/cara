@@ -60,7 +60,10 @@ static void app_shutdown(cara_app_t *app) {
 int main(void) {
     cara_config_t config = {
         .ups = 120,
-        .fps = 30
+        .fps = 30,
+        .window.height = 480,
+        .window.width = 640,
+        .window.title = "ExampleMinimal"
     };
 
     cara_t *cara = NULL;

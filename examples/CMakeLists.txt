@@ -8,3 +8,14 @@ target_link_libraries(cara_example_minimal
 )
 
 enable_warnings(cara_example_minimal)
+
+
+add_executable(cara_example_window
+    window/main.c
+)
+
+target_link_libraries(cara_example_window
+    PRIVATE cara
+)
+
+enable_warnings(cara_example_window)
