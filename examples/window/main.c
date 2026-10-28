@@ -29,10 +29,6 @@ static cara_status_t app_update(
 
     data->update_count += 1;
 
-    if (data->update_count >= 120) {
-        cara_request_quit(data->cara);
-    }
-
     return CARA_STATUS_OK;
 }
 
@@ -61,9 +57,9 @@ int main(void) {
     cara_config_t config = {
         .ups = 120,
         .fps = 30,
-        .window.title = "Window Test",
-        .window.width = 320,
-        .window.height = 180
+        .window.title = "ExampleWindow",
+        .window.width = 640,
+        .window.height = 480
     };
 
     cara_t *cara = NULL;

@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include <math.h>
-#include <stdio.h>
 
 #include "cara/cara.h"
 #include "cara_internal.h"
@@ -51,12 +50,18 @@ cara_status_t cara_create(const cara_config_t *config, cara_t **p_cara)
 		return CARA_STATUS_INVALID_ARGUMENT;
 	}
 
+	if (config->window.title == NULL ||
+		config->window.height == 0 || 
+		config->window.width == 0) {
+		return CARA_STATUS_INVALID_ARGUMENT;
+	}
+
 	cara_t *cara = calloc(1, sizeof(*cara));
 	if (!cara) {
 		return CARA_STATUS_OUT_OF_MEMORY;
 	}
 
-	cara_status_t status = cara_platform_create(&cara->platform);
+	cara_status_t status = cara_platform_create(&cara->platform, &config->window);
 	if (status != CARA_STATUS_OK) {
 		free(cara);
 		return status;
@@ -132,8 +137,8 @@ static void cara_shutdown_app(
 	cara_t *cara,
 	cara_app_t *app
 ) {
-	cara->running = false;
 	app->shutdown(app);
+	cara->running = false;
 }
 
 
@@ -256,8 +261,22 @@ static cara_status_t cara_do_mainloop(
 
 
 	while (!cara->quit_requested) {
-		status = cara_update_timer(cara);
+		bool platform_quit_requested = false;
+
+		status = cara_platform_process_messages(
+			cara->platform,
+			&platform_quit_requested
+		);
 		if (status != CARA_STATUS_OK) {
+			return status;
+		}
+		if (platform_quit_requested) {
+			cara->quit_requested = true;
+			break;
+		}
+
+		status = cara_update_timer(cara);
+		if (status != CARA_STATUS_OK || cara->quit_requested) {
 			return status;
 		}
 

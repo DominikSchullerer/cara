@@ -1,18 +1,23 @@
 #include <stdlib.h>
-
+#include <stdint.h>
 #include <windows.h>
+#include <stdbool.h>
 
 
 #include "platform/include/cara_platform.h"
 #include "platform/windows/cara_win32_internal.h"
+#include "platform/windows/cara_win32_window.h"
 
 
 static cara_status_t init_timer(cara_platform_t *platform);
 
 
-cara_status_t cara_platform_create(cara_platform_t **p_platform)
+cara_status_t cara_platform_create(
+	cara_platform_t **p_platform,
+	const cara_window_config_t *window_config
+)
 {
-	if (!p_platform) {
+	if (!p_platform || !window_config) {
 		return CARA_STATUS_INVALID_ARGUMENT;
 	}
 	*p_platform = NULL;
@@ -26,7 +31,7 @@ cara_status_t cara_platform_create(cara_platform_t **p_platform)
 
 	status = init_timer(platform);
 	if (status != CARA_STATUS_OK) {
-		free(platform);
+		cara_platform_destroy(platform);
 		return status;
 	}
 
@@ -37,8 +42,15 @@ cara_status_t cara_platform_create(cara_platform_t **p_platform)
 		TIMER_MODIFY_STATE | SYNCHRONIZE
 	);
 	if (!platform->wait_timer) {
-		free(platform);
+		cara_platform_destroy(platform);
 		return CARA_STATUS_PLATFORM_ERROR;
+	}
+
+	status = cara_window_create(window_config, platform);
+
+	if (status != CARA_STATUS_OK) {
+		cara_platform_destroy(platform);
+		return status;
 	}
 
 	*p_platform = platform;
@@ -52,7 +64,16 @@ void cara_platform_destroy(cara_platform_t *platform)
 		return;
 	}
 
-	CloseHandle(platform->wait_timer);
+	if (platform->window) {
+		DestroyWindow(platform->window);
+		platform->window = NULL;
+	}
+
+	if (platform->wait_timer) {
+		CloseHandle(platform->wait_timer);
+		platform->wait_timer = NULL;
+	}
+
 	free(platform);
 }
 
@@ -137,6 +158,31 @@ cara_status_t cara_platform_wait(
 	
 	if (result != WAIT_OBJECT_0) {
 		return CARA_STATUS_PLATFORM_ERROR;
+	}
+
+	return CARA_STATUS_OK;
+}
+
+cara_status_t cara_platform_process_messages(
+	cara_platform_t *platform,
+	bool *p_quit_requested
+) {
+	if (!platform || !p_quit_requested) {
+		return CARA_STATUS_INVALID_ARGUMENT;
+	}
+
+	*p_quit_requested = false;
+
+	MSG msg;
+
+	while (PeekMessageA(&msg, NULL, 0, 0, PM_REMOVE)) {
+		if (msg.message == WM_QUIT) {
+			*p_quit_requested = true;
+			break;
+		}
+
+		TranslateMessage(&msg);
+		DispatchMessageA(&msg);
 	}
 
 	return CARA_STATUS_OK;
