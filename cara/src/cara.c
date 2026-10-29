@@ -3,6 +3,8 @@
 
 #include "cara/cara.h"
 #include "cara_internal.h"
+#include "platform/include/cara_platform.h"
+#include "event/include/cara_event_manager.h"
 
 
 static cara_status_t cara_start_app(
@@ -61,9 +63,15 @@ cara_status_t cara_create(const cara_config_t *config, cara_t **p_cara)
 		return CARA_STATUS_OUT_OF_MEMORY;
 	}
 
-	cara_status_t status = cara_platform_create(&cara->platform, &config->window);
+	cara_status_t status = cara_platform_create(&cara->platform, &config->window, cara);
 	if (status != CARA_STATUS_OK) {
-		free(cara);
+		cara_destroy(cara);
+		return status;
+	}
+
+	status = cara_event_manager_create(&cara->event_manager);
+	if (status != CARA_STATUS_OK) {
+		cara_destroy(cara);
 		return status;
 	}
 
@@ -80,7 +88,15 @@ void cara_destroy(cara_t *cara)
 		return;
 	}
 
-	cara_platform_destroy(cara->platform);
+	if (cara->event_manager) {
+		cara_event_manager_destroy(cara->event_manager);
+		cara->event_manager = NULL;
+	}
+	
+	if (cara->platform) {
+		cara_platform_destroy(cara->platform);
+		cara->platform = NULL;
+	}
 	free(cara);
 }
 
@@ -103,7 +119,7 @@ cara_status_t cara_run(cara_t *cara, cara_app_t *app)
 		return CARA_STATUS_INVALID_ARGUMENT;
 	}
 
-	if (!app->init || !app->update || !app->render || !app->shutdown) {
+	if (!app->init || !app->update || !app->render || !app->shutdown || !app->event) {
 		return CARA_STATUS_INVALID_ARGUMENT;
 	}
 
@@ -263,6 +279,11 @@ static cara_status_t cara_do_mainloop(
 	while (!cara->quit_requested) {
 		bool platform_quit_requested = false;
 
+		status = cara_event_reset(cara->event_manager);
+		if (status != CARA_STATUS_OK || cara->quit_requested) {
+			return status;
+		}
+
 		status = cara_platform_process_messages(
 			cara->platform,
 			&platform_quit_requested
@@ -273,6 +294,11 @@ static cara_status_t cara_do_mainloop(
 		if (platform_quit_requested) {
 			cara->quit_requested = true;
 			break;
+		}
+
+		status = cara_event_process(cara->event_manager, app);
+		if (status != CARA_STATUS_OK || cara->quit_requested) {
+			return status;
 		}
 
 		status = cara_update_timer(cara);
