@@ -5,12 +5,14 @@
 #include <stdbool.h>
 #include "cara/cara_status.h"
 #include "cara/cara_config.h"
+typedef struct cara_t cara_t;
 
 typedef struct cara_platform_t cara_platform_t;
 
 cara_status_t cara_platform_create(
     cara_platform_t **p_platform, 
-    const cara_window_config_t *window_config
+    const cara_window_config_t *window_config,
+    cara_t* cara
 );
 
 void cara_platform_destroy(cara_platform_t *platform);

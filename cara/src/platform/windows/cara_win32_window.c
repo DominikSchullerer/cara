@@ -15,7 +15,8 @@ static cara_status_t cara_window_register_class(void);
 
 cara_status_t cara_window_create(
 	const cara_window_config_t *window_config, 
-	cara_platform_t *platform
+	cara_platform_t *platform,
+	cara_t *cara
 )
 {
 	if (!window_config || !platform) {
@@ -50,7 +51,7 @@ cara_status_t cara_window_create(
 		NULL,
 		NULL,
 		GetModuleHandleA(NULL),
-		platform
+		cara
 	);
 
 	if (!window) {
@@ -72,28 +73,38 @@ static LRESULT CALLBACK cara_window_proc(
 	WPARAM wparam,
 	LPARAM lparam
 ) {
-	cara_platform_t *platform = (cara_platform_t *)
-		GetWindowLongPtrA(hwnd, GWLP_USERDATA);
+	cara_t *cara = (cara_t *)GetWindowLongPtrA(hwnd, GWLP_USERDATA);
 
 	switch (message) {
 		case WM_NCCREATE: {
 			CREATESTRUCTA *create_info = (CREATESTRUCTA *) lparam;
-			platform = (cara_platform_t *)create_info->lpCreateParams;
+			cara = (cara_t *)create_info->lpCreateParams;
 
 			SetWindowLongPtrA(
 				hwnd,
 				GWLP_USERDATA,
-				(LONG_PTR) platform
+				(LONG_PTR) cara
 			);
 
 			return TRUE;
 		}
 		case WM_CLOSE:
-			DestroyWindow(hwnd);
+			cara_event_insert(cara->event_manager, (cara_event_t) { .type = CARA_CLOSE_REQUEST });
 			return 0;
 		case WM_DESTROY:
 			PostQuitMessage(0);
 			return 0;
+		case WM_SIZE:
+			cara_event_t event = {
+				.type = CARA_RESIZED,
+				.resize = {
+					.new_width = LOWORD(lparam),
+					.new_height = HIWORD(lparam)
+				}
+			};
+
+			cara_event_insert(cara->event_manager, event);
+			return DefWindowProcA(hwnd, message, wparam, lparam);
 		default:
 			return DefWindowProcA(hwnd, message, wparam, lparam);
 	}

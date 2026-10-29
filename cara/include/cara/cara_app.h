@@ -3,11 +3,17 @@
 
 #include "cara/cara_status.h"
 #include "cara/cara_pixbuf.h"
+#include "cara/cara_event.h"
 
 typedef struct cara_app_t cara_app_t;
 
 
 typedef cara_status_t (*cara_app_init_fn)(cara_app_t *app);
+
+typedef cara_status_t(*cara_app_event_fn)(
+    cara_app_t *app,
+    cara_event_t event
+);
 
 typedef cara_status_t (*cara_app_update_fn)(
     cara_app_t *app,
@@ -26,6 +32,7 @@ struct cara_app_t {
 	void *data;
 
     cara_app_init_fn init;
+    cara_app_event_fn event;
     cara_app_update_fn update;
     cara_app_render_fn render;
     cara_app_shutdown_fn shutdown;

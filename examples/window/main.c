@@ -19,6 +19,16 @@ static cara_status_t app_init(cara_app_t *app) {
     return CARA_STATUS_OK;
 }
 
+static cara_status_t app_event(
+    cara_app_t *app,
+    cara_event_t event
+)
+{
+    (void) app;
+    (void) event;
+    return CARA_STATUS_OK;
+}
+
 static cara_status_t app_update(
     cara_app_t *app,
     double delta_time
@@ -77,6 +87,7 @@ int main(void) {
     cara_app_t app = {
         .data = &data,
         .init = app_init,
+        .event = app_event,
         .update = app_update,
         .render = app_render,
         .shutdown = app_shutdown

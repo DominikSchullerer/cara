@@ -14,7 +14,8 @@ static cara_status_t init_timer(cara_platform_t *platform);
 
 cara_status_t cara_platform_create(
 	cara_platform_t **p_platform,
-	const cara_window_config_t *window_config
+	const cara_window_config_t *window_config,
+	cara_t* cara
 )
 {
 	if (!p_platform || !window_config) {
@@ -46,7 +47,7 @@ cara_status_t cara_platform_create(
 		return CARA_STATUS_PLATFORM_ERROR;
 	}
 
-	status = cara_window_create(window_config, platform);
+	status = cara_window_create(window_config, platform, cara);
 
 	if (status != CARA_STATUS_OK) {
 		cara_platform_destroy(platform);

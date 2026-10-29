@@ -1,5 +1,6 @@
 add_library(cara STATIC
     src/cara.c
+    src/event/cara_event_manager.c
 )
 
 if(WIN32)
