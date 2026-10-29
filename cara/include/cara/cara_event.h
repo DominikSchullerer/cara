@@ -1,6 +1,8 @@
 #ifndef CARA_EVENT_H_INCLUDED
 #define CARA_EVENT_H_INCLUDED
 
+#include <stdint.h>
+
 typedef struct cara_event_t cara_event_t;
 typedef enum cara_event_type_t cara_event_type_t;
 

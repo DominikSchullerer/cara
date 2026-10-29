@@ -12,6 +12,4 @@ struct cara_platform_t {
 	HWND window;
 };
 
-#define TEST 1
-
 #endif // !CARA_PLATFORM_INTERNAL_H_INCLUDED

@@ -2,7 +2,7 @@
 #include <stdbool.h>
 
 #include "event/include/cara_event_manager.h"
-#include "cara/cara_event.h"
+#include "cara/cara_app.h"
 
 typedef struct cara_event_container_t cara_event_container_t;
 

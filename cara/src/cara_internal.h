@@ -2,9 +2,8 @@
 #define CARA_INTERNAL_H_INCLUDED
 
 #include <stdbool.h>
-#include "cara/cara_config.h"
-#include "platform/include/cara_platform.h"
-#include "event/include/cara_event_manager.h"
+
+#include "cara_types.h"
 
 typedef struct cara_timer_t cara_timer_t;
 typedef struct cara_timer_channel_t cara_timer_channel_t;
@@ -30,7 +29,6 @@ struct cara_t {
 
 	bool running;
 	bool quit_requested;
-
 	cara_platform_t *platform;
 	cara_event_manager_t *event_manager;
 };
