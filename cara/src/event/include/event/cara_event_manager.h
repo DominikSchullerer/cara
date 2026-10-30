@@ -3,7 +3,8 @@
 
 #include "cara/cara_status.h"
 #include "cara/cara_event.h"
-#include "cara_types.h"
+#include "cara/cara_app.h"
+#include "cara_event_manager_type.h"
 
 cara_status_t cara_event_manager_create(cara_event_manager_t **p_event_manager);
 void cara_event_manager_destroy(cara_event_manager_t *event_manger);

@@ -3,10 +3,9 @@
 #include <windows.h>
 #include <stdbool.h>
 
-
-#include "platform/include/cara_platform.h"
-#include "platform/windows/cara_win32_internal.h"
-#include "platform/windows/cara_win32_window.h"
+#include "platform/cara_platform.h"
+#include "cara_win32_internal.h"
+#include "cara_win32_window.h"
 
 
 static cara_status_t init_timer(cara_platform_t *platform);

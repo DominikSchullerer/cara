@@ -2,7 +2,8 @@
 #define CARA_WIN32_WINDOW_H_INCLUDED
 
 #include "cara/cara_status.h"
-#include "cara_types.h"
+#include "cara/cara_config.h"
+#include "cara_internal/cara_type.h"
 
 
 cara_status_t cara_window_create(

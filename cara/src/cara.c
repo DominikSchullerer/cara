@@ -2,11 +2,9 @@
 #include <math.h>
 
 #include "cara/cara.h"
-#include "platform/include/cara_platform.h"
-#include "event/include/cara_event_manager.h"
-
-// ToDo: Remove
-#include "cara_internal.h"
+#include "platform/cara_platform.h"
+#include "event/cara_event_manager.h"
+#include "cara_internal/cara_type.h"
 
 static cara_status_t cara_start_app(
 	cara_t *cara,

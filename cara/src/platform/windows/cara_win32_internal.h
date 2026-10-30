@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include <windows.h>
-#include "platform/include/cara_platform.h"
+#include "platform/cara_platform_type.h"
 
 struct cara_platform_t {
 	uint64_t frequency;

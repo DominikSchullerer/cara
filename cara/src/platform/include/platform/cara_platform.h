@@ -4,7 +4,9 @@
 #include <stdbool.h>
 
 #include "cara/cara_status.h"
-#include "cara_types.h"
+#include "cara/cara_config.h"
+#include "platform/cara_platform_type.h"
+#include "cara_internal/cara_type.h"
 
 cara_status_t cara_platform_create(
     cara_platform_t **p_platform, 

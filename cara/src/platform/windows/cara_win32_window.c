@@ -1,12 +1,10 @@
 #include <windows.h>
 
 #include "cara/cara_config.h"
-#include "platform/windows/cara_win32_window.h"
-#include "platform/windows/cara_win32_internal.h"
-#include "event/include/cara_event_manager.h"
-
-// TODO: remove and use functions
-#include "cara_internal.h"
+#include "cara_win32_internal.h"
+#include "cara_win32_window.h"
+#include "event/cara_event_manager.h"
+#include "cara_internal/cara_type.h"
 
 #define CARA_WINDOW_CLASS_NAME	"CaraWindowClass"
 
