@@ -91,7 +91,7 @@ int main(void) {
     cara_app_t app = {
         .data = &data,
         .init = app_init,
-        .event = app_event;
+        .event = app_event,
         .update = app_update,
         .render = app_render,
         .shutdown = app_shutdown

@@ -3,23 +3,20 @@
 #include <windows.h>
 #include <stdbool.h>
 
-#include "platform/cara_platform.h"
+#include "cara_platform/cara_platform.h"
 #include "cara_win32_internal.h"
 #include "cara_win32_window.h"
-
+#include "cara_core/cara_core.h"
 
 static cara_status_t init_timer(cara_platform_t *platform);
 
 
 cara_status_t cara_platform_create(
-	cara_platform_t **p_platform,
+	cara_t *cara,
 	const cara_window_config_t *window_config,
-	cara_t* cara
+	cara_platform_t **p_platform
 )
 {
-	if (!p_platform || !window_config) {
-		return CARA_STATUS_INVALID_ARGUMENT;
-	}
 	*p_platform = NULL;
 
 	cara_platform_t *platform = calloc(1, sizeof(*platform));
@@ -47,11 +44,12 @@ cara_status_t cara_platform_create(
 	}
 
 	status = cara_window_create(window_config, platform, cara);
-
 	if (status != CARA_STATUS_OK) {
 		cara_platform_destroy(platform);
 		return status;
 	}
+
+	platform->cara = cara;
 
 	*p_platform = platform;
 
@@ -81,10 +79,6 @@ cara_status_t cara_platform_get_time(
 	cara_platform_t *platform,
 	double *p_time
 ) {
-	if (!platform || !p_time) {
-		return CARA_STATUS_INVALID_ARGUMENT;
-	}
-
 	LARGE_INTEGER counter;
 	if (!QueryPerformanceCounter(&counter) ||
 		counter.QuadPart < 0) {
@@ -109,10 +103,6 @@ cara_status_t cara_platform_get_time(
 
 static cara_status_t init_timer(cara_platform_t *platform) 
 {
-	if (!platform) {
-		return CARA_STATUS_INVALID_ARGUMENT;
-	}
-
 	LARGE_INTEGER frequency;
 	LARGE_INTEGER counter;
 
@@ -133,7 +123,7 @@ cara_status_t cara_platform_wait(
 	cara_platform_t *platform,
 	double wait_time
 ) {
-	if (!platform || wait_time < 0.0) {
+	if (wait_time < 0.0) {
 		return CARA_STATUS_INVALID_ARGUMENT;
 	}
 
@@ -164,20 +154,14 @@ cara_status_t cara_platform_wait(
 }
 
 cara_status_t cara_platform_process_messages(
-	cara_platform_t *platform,
-	bool *p_quit_requested
+	cara_platform_t *platform
 ) {
-	if (!platform || !p_quit_requested) {
-		return CARA_STATUS_INVALID_ARGUMENT;
-	}
-
-	*p_quit_requested = false;
-
+	cara_core_t *core = platform->cara->core;
 	MSG msg;
 
 	while (PeekMessageA(&msg, NULL, 0, 0, PM_REMOVE)) {
 		if (msg.message == WM_QUIT) {
-			*p_quit_requested = true;
+			cara_core_request_quit(core);
 			break;
 		}
 
