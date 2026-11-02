@@ -1,16 +1,20 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include "event/include/cara_event_manager.h"
-#include "cara/cara_event.h"
+#include "cara_event/cara_event_manager.h"
+#include "cara/cara_app.h"
 
-typedef struct cara_event_container_t cara_event_container_t;
-
-struct cara_event_container_t {
+/**
+ * @brief Stores an event.
+ */
+typedef struct cara_event_container_t {
 	bool exists;
 	cara_event_t event;
-};
+} cara_event_container_t;
 
+/**
+ * @brief Internal state of the event manager.
+ */
 struct cara_event_manager_t {
 	cara_event_container_t close_request;
 	cara_event_container_t resize;
@@ -28,25 +32,13 @@ cara_status_t cara_event_manager_create(cara_event_manager_t **p_event_manager)
 	return CARA_STATUS_OK;
 }
 
-void cara_event_manager_destroy(cara_event_manager_t *event_manger)
+void cara_event_manager_destroy(cara_event_manager_t *event_manager)
 {
-	if (!event_manger) {
+	if (!event_manager) {
 		return;
 	}
 
-	free(event_manger);
-}
-
-cara_status_t cara_event_reset(cara_event_manager_t *event_manager)
-{
-	if (!event_manager) {
-		return CARA_STATUS_INVALID_ARGUMENT;
-	}
-
-	event_manager->close_request.exists = 0;
-	event_manager->resize.exists = 0;
-
-	return CARA_STATUS_OK;
+	free(event_manager);
 }
 
 cara_status_t cara_event_insert(
@@ -54,10 +46,6 @@ cara_status_t cara_event_insert(
 	cara_event_t event
 )
 {
-	if (!event_manager) {
-		return CARA_STATUS_INVALID_ARGUMENT;
-	}
-
 	switch (event.type) {
 		case CARA_CLOSE_REQUEST:
 			event_manager->close_request.exists = true;
@@ -67,6 +55,8 @@ cara_status_t cara_event_insert(
 			event_manager->resize.exists = true;
 			event_manager->resize.event = event;
 			break;
+		default:
+			return CARA_STATUS_INVALID_ARGUMENT;
 	}
 
 	return CARA_STATUS_OK;
@@ -77,23 +67,25 @@ cara_status_t cara_event_process(
 	cara_app_t *app
 )
 {
-	if (!event_manager || !app) {
-		return CARA_STATUS_INVALID_ARGUMENT;
-	}
+	cara_status_t status = CARA_STATUS_OK;
 
 	if (event_manager->close_request.exists) {
-		cara_status_t status = app->event(app, event_manager->close_request.event);
+		status = app->event(app, event_manager->close_request.event);
 		if (status != CARA_STATUS_OK) {
-			return status;
+			goto exit;
 		}
 	}
 
 	if (event_manager->resize.exists) {
-		cara_status_t status = app->event(app, event_manager->resize.event);
+		status = app->event(app, event_manager->resize.event);
 		if (status != CARA_STATUS_OK) {
-			return status;
+			goto exit;
 		}
 	}
 
-	return CARA_STATUS_OK;
+exit:
+	event_manager->close_request.exists = 0;
+	event_manager->resize.exists = 0;
+
+	return status;
 }

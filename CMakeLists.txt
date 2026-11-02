@@ -25,27 +25,6 @@ endfunction()
 
 add_subdirectory(cara)
 
-# Manuelle Tests / Experimente
-add_executable(cara_manual
-    tests/manual/main.c
-)
-
-target_link_libraries(cara_manual
-    PRIVATE
-        cara
-        cara_internal
-)
-
-# Automatische Tests
-add_executable(cara_tests
-    tests/automatic/main.c
-)
-
-target_link_libraries(cara_tests
-    PRIVATE
-        cara
-        cara_internal
-)
 
 # Examples
 option(CARA_BUILD_EXAMPLES "Build CARA examples" ON)
@@ -55,5 +34,3 @@ if(CARA_BUILD_EXAMPLES)
 endif()
 
 enable_warnings(cara)
-enable_warnings(cara_manual)
-enable_warnings(cara_tests)

@@ -1,6 +1,10 @@
 #include <windows.h>
 
+#include "cara/cara_config.h"
+#include "cara_win32_internal.h"
 #include "cara_win32_window.h"
+#include "cara_event/cara_event_manager.h"
+#include "cara_internal/cara_type.h"
 
 #define CARA_WINDOW_CLASS_NAME	"CaraWindowClass"
 
@@ -19,10 +23,6 @@ cara_status_t cara_window_create(
 	cara_t *cara
 )
 {
-	if (!window_config || !platform) {
-		return CARA_STATUS_INVALID_ARGUMENT;
-	}
-
 	cara_status_t status = cara_window_register_class();
 	if (status != CARA_STATUS_OK) {
 		return status;
