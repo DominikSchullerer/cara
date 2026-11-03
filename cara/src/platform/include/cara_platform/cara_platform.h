@@ -5,6 +5,7 @@
 
 #include "cara/cara_status.h"
 #include "cara/cara_config.h"
+#include "cara/cara_pixbuf.h"
 #include "cara_platform/cara_platform_type.h"
 #include "cara_internal/cara_type.h"
 
@@ -30,5 +31,9 @@ cara_status_t cara_platform_process_messages(
     cara_platform_t *platform
 );
 
+cara_status_t cara_platform_present(
+    cara_platform_t *platform,
+    const cara_pixbuf_t *buffer
+);
 
 #endif // !CARA_PLATFORM_H_INCLUDED

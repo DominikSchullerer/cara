@@ -14,7 +14,13 @@ static LRESULT CALLBACK cara_window_proc(
 	WPARAM wparam,
 	LPARAM lparam
 );
+
 static cara_status_t cara_window_register_class(void);
+
+static void cara_win32_present(
+	cara_platform_t *platform,
+	HDC dc
+);
 
 
 cara_status_t cara_window_create(
@@ -67,6 +73,29 @@ cara_status_t cara_window_create(
 }
 
 
+cara_status_t cara_platform_present(
+	cara_platform_t *platform,
+	const cara_pixbuf_t *buffer
+)
+{
+	if (buffer) {
+		if (buffer->width == 0 ||
+			buffer->height == 0) {
+			platform->pixbuf = NULL;
+			return CARA_STATUS_INVALID_ARGUMENT;
+		}
+	}
+	platform->pixbuf = buffer;
+
+
+	if (!InvalidateRect(platform->window, NULL, FALSE)) {
+		return CARA_STATUS_PLATFORM_ERROR;
+	}
+
+	return CARA_STATUS_OK;
+}
+
+
 static LRESULT CALLBACK cara_window_proc(
 	HWND hwnd,
 	UINT message,
@@ -105,6 +134,16 @@ static LRESULT CALLBACK cara_window_proc(
 
 			cara_event_insert(cara->event_manager, event);
 			return DefWindowProcA(hwnd, message, wparam, lparam);
+		case WM_PAINT:
+			PAINTSTRUCT paint;
+			HDC dc = BeginPaint(hwnd, &paint);
+
+			if (cara && cara->platform) {
+				cara_win32_present(cara->platform, dc);
+			}
+
+			EndPaint(hwnd, &paint);
+			return 0;
 		default:
 			return DefWindowProcA(hwnd, message, wparam, lparam);
 	}
@@ -127,4 +166,64 @@ static cara_status_t cara_window_register_class(void)
 	}
 
 	return CARA_STATUS_OK;
+}
+
+
+static void cara_win32_present(
+	cara_platform_t *platform,
+	HDC dc
+) {
+	const cara_pixbuf_t *buffer = platform->pixbuf;
+
+	if (!buffer || !buffer->pixels) {
+		RECT rect;
+
+		if (!GetClientRect(platform->window, &rect)) {
+			return;
+		}
+
+		FillRect(
+			dc,
+			&rect,
+			(HBRUSH) GetStockObject(BLACK_BRUSH)
+		);
+
+		return;
+	}
+
+	RECT rect;
+
+	if (!GetClientRect(platform->window, &rect)) {
+		return;
+	}
+
+	int32_t width = rect.right - rect.left;
+	int32_t height = rect.bottom - rect.top;
+
+	if (width <= 0 || height <= 0) {
+		return;
+	}
+
+	BITMAPINFO bitmap_info = {0};
+
+	bitmap_info.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+	bitmap_info.bmiHeader.biWidth = (LONG) buffer->width;
+	bitmap_info.bmiHeader.biHeight = -(LONG) buffer->height;
+	bitmap_info.bmiHeader.biPlanes = 1;
+	bitmap_info.bmiHeader.biBitCount = 32;
+	bitmap_info.bmiHeader.biCompression = BI_RGB;
+
+	StretchDIBits(
+		dc,
+		0, 0,
+		width, height,
+		0, 0,
+		buffer->width, buffer->height,
+		buffer->pixels,
+		&bitmap_info,
+		DIB_RGB_COLORS,
+		SRCCOPY
+	);
+
+	return;
 }

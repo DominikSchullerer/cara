@@ -19,3 +19,15 @@ target_link_libraries(cara_example_events
 )
 
 enable_warnings(cara_example_events)
+
+
+add_executable(cara_example_render
+    render/main.c
+)
+
+target_link_libraries(cara_example_render
+    PRIVATE cara
+)
+
+enable_warnings(cara_example_render)
+

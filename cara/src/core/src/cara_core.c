@@ -272,6 +272,7 @@ static cara_status_t cara_core_do_update(cara_core_t *core, cara_app_t *app)
 static cara_status_t cara_core_do_render(cara_core_t *core, cara_app_t *app) 
 {
 	cara_timer_t *timer = &core->timer;
+	cara_platform_t *platform = core->cara->platform;
 	cara_status_t status = CARA_STATUS_OK;
 	cara_pixbuf_t *pixbuf = NULL;
 
@@ -295,8 +296,10 @@ static cara_status_t cara_core_do_render(cara_core_t *core, cara_app_t *app)
 	}
 
 	if (pixbuf) {
-		// ToDo: Draw to Screen
-		;
+		status = cara_platform_present(platform, pixbuf);
+		if (status != CARA_STATUS_OK) {
+			return status;
+		}
 	}
 
 	return status;
