@@ -67,6 +67,65 @@ cara_status_t cara_window_create(
 }
 
 
+cara_status_t cara_platform_present(
+	cara_platform_t *platform,
+	const cara_pixbuf_t *buffer
+)
+{
+	if (buffer->width == 0 ||
+		buffer->height == 0) {
+		return CARA_STATUS_INVALID_ARGUMENT;
+	}
+
+	RECT rect;
+
+	if (!GetClientRect(platform->window, &rect)) {
+		return CARA_STATUS_PLATFORM_ERROR;
+	}
+
+	int32_t window_width = rect.right - rect.left;
+	int32_t window_height = rect.bottom - rect.top;
+
+	if (window_width <= 0 || window_height <= 0) {
+		return CARA_STATUS_OK;
+	}
+
+	HDC dc = GetDC(platform->window);
+	if (!dc) {
+		return CARA_STATUS_PLATFORM_ERROR;
+	}
+
+	BITMAPINFO bitmap_info = {0};
+
+	bitmap_info.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+	bitmap_info.bmiHeader.biWidth = (LONG) buffer->width;
+	bitmap_info.bmiHeader.biHeight = -(LONG) buffer->height;
+	bitmap_info.bmiHeader.biPlanes = 1;
+	bitmap_info.bmiHeader.biBitCount = 32;
+	bitmap_info.bmiHeader.biCompression = BI_RGB;
+
+	int result = StretchDIBits(
+		dc,
+		0, 0,
+		window_width, window_height,
+		0, 0,
+		buffer->width, buffer->height,
+		buffer->pixels,
+		&bitmap_info,
+		DIB_RGB_COLORS,
+		SRCCOPY
+	);
+
+	ReleaseDC(platform->window, dc);
+
+	if (result == GDI_ERROR) {
+		return CARA_STATUS_PLATFORM_ERROR;
+	}
+
+	return CARA_STATUS_OK;
+}
+
+
 static LRESULT CALLBACK cara_window_proc(
 	HWND hwnd,
 	UINT message,
