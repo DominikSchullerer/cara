@@ -174,38 +174,37 @@ static void cara_win32_present(
 	HDC dc
 ) {
 	const cara_pixbuf_t *buffer = platform->pixbuf;
-
-	if (!buffer || !buffer->pixels) {
-		RECT rect;
-
-		if (!GetClientRect(platform->window, &rect)) {
-			return;
-		}
-
-		FillRect(
-			dc,
-			&rect,
-			(HBRUSH) GetStockObject(BLACK_BRUSH)
-		);
-
-		return;
-	}
-
 	RECT rect;
-
 	if (!GetClientRect(platform->window, &rect)) {
 		return;
 	}
-
 	int32_t width = rect.right - rect.left;
 	int32_t height = rect.bottom - rect.top;
 
-	if (width <= 0 || height <= 0) {
+	FillRect(
+		dc,
+		&rect,
+		(HBRUSH) GetStockObject(BLACK_BRUSH)
+	);
+
+	if (!buffer || !buffer->pixels) {
+		return;
+	}
+
+	double scale_x = (double) width / platform->pixbuf->width;
+	double scale_y = (double) height / platform->pixbuf->height;
+	double scale = scale_x < scale_y ? scale_x : scale_y;
+
+	int32_t scaled_width = (int32_t) (platform->pixbuf->width * scale);
+	int32_t scaled_height = (int32_t) (platform->pixbuf->height * scale);
+	int32_t offset_x = (width - scaled_width) / 2;
+	int32_t offset_y = (height - scaled_height) / 2;
+
+	if (scaled_width <= 0 || scaled_height <= 0) {
 		return;
 	}
 
 	BITMAPINFO bitmap_info = {0};
-
 	bitmap_info.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 	bitmap_info.bmiHeader.biWidth = (LONG) buffer->width;
 	bitmap_info.bmiHeader.biHeight = -(LONG) buffer->height;
@@ -215,8 +214,8 @@ static void cara_win32_present(
 
 	StretchDIBits(
 		dc,
-		0, 0,
-		width, height,
+		offset_x, offset_y,
+		scaled_width, scaled_height,
 		0, 0,
 		buffer->width, buffer->height,
 		buffer->pixels,

@@ -5,7 +5,7 @@
 #include "cara/cara.h"
 
 #define RESOLUTION_X    240
-#define RESOLUTION_Y    360
+#define RESOLUTION_Y    240
 
 typedef struct {
     unsigned int update_count;
@@ -69,8 +69,7 @@ static cara_status_t app_render(
     *out_buffer = NULL;
     fprintf(stdout, "Update count: %u\n", data->update_count);
 
-    memset(pixbuf->pixels, 0, RESOLUTION_X * RESOLUTION_Y * sizeof(*pixbuf->pixels));
-
+    memset(pixbuf->pixels, 0x80, RESOLUTION_X * RESOLUTION_Y * sizeof(*pixbuf->pixels));
 
     uint32_t rect_width = data->update_count % (RESOLUTION_X + 1);
     uint32_t rect_height = data->update_count % (RESOLUTION_Y + 1);
