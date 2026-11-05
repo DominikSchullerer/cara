@@ -6,6 +6,7 @@
 #include "cara_platform/cara_platform.h"
 #include "cara_event/cara_event_manager.h"
 #include "cara_core/cara_core.h"
+#include "cara_input/cara_input.h"
 
 
 cara_status_t cara_create(const cara_config_t *config, cara_t **p_cara)
@@ -50,6 +51,12 @@ cara_status_t cara_create(const cara_config_t *config, cara_t **p_cara)
 		return status;
 	}
 
+	status = cara_input_create(cara, &cara->input);
+	if (status != CARA_STATUS_OK) {
+		cara_destroy(cara);
+		return status;
+	}
+
 	cara->config = *config;
 
 	*p_cara = cara;
@@ -63,20 +70,11 @@ void cara_destroy(cara_t *cara)
 		return;
 	}
 
-	if (cara->core) {
-		cara_core_destroy(cara->core);
-		cara->core = NULL;
-	}
+	cara_input_destroy(cara->input);
+	cara_core_destroy(cara->core);
+	cara_event_manager_destroy(cara->event_manager);
+	cara_platform_destroy(cara->platform);
 
-	if (cara->event_manager) {
-		cara_event_manager_destroy(cara->event_manager);
-		cara->event_manager = NULL;
-	}
-	
-	if (cara->platform) {
-		cara_platform_destroy(cara->platform);
-		cara->platform = NULL;
-	}
 	free(cara);
 }
 
@@ -100,4 +98,31 @@ cara_status_t cara_run(cara_t *cara, cara_app_t *app)
 	}
 
 	return cara_core_run(cara->core, app);
+}
+
+bool cara_key_down(cara_t *cara, cara_key_t key)
+{
+	if (!cara || key < 0) {
+		return false;
+	}
+
+	return cara_input_key_down(cara->input, key);
+}
+
+bool cara_key_pressed(cara_t *cara, cara_key_t key)
+{
+	if (!cara || key < 0) {
+		return false;
+	}
+
+	return cara_input_key_pressed(cara->input, key);
+}
+
+bool cara_key_released(cara_t *cara, cara_key_t key)
+{
+	if (!cara || key < 0) {
+		return false;
+	}
+
+	return cara_input_key_released(cara->input, key);
 }

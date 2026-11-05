@@ -2,6 +2,7 @@ add_library(cara STATIC
     src/cara.c
     src/event/src/cara_event_manager.c
     src/core/src/cara_core.c
+    src/input/src/cara_input.c
 )
 
 if(WIN32)
@@ -21,4 +22,5 @@ target_include_directories(cara
         ${CMAKE_CURRENT_SOURCE_DIR}/src/event/include
         ${CMAKE_CURRENT_SOURCE_DIR}/src/platform/include
         ${CMAKE_CURRENT_SOURCE_DIR}/src/core/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/input/include
 )
