@@ -118,7 +118,7 @@ static LRESULT CALLBACK cara_window_proc(
 				(LONG_PTR) cara
 			);
 
-			return TRUE;
+			return DefWindowProcA(hwnd, message, wparam, lparam);
 		}
 		case WM_CLOSE:
 			cara_event_insert(cara->event_manager, (cara_event_t) { .type = CARA_CLOSE_REQUEST });
