@@ -6,6 +6,7 @@
 #include "cara_platform/cara_platform_type.h"
 #include "cara_event/cara_event_manager_type.h"
 #include "cara_core/cara_core_type.h"
+#include "cara_input/cara_input_type.h"
 #include "cara/cara_config.h"
 
 typedef struct cara_t cara_t;
@@ -18,6 +19,7 @@ struct cara_t {
 	cara_core_t *core;
 	cara_platform_t *platform;
 	cara_event_manager_t *event_manager;
+	cara_input_t *input;
 };
 
 

@@ -31,3 +31,13 @@ target_link_libraries(cara_example_render
 
 enable_warnings(cara_example_render)
 
+
+add_executable(cara_example_input
+    input/main.c
+)
+
+target_link_libraries(cara_example_input
+    PRIVATE cara
+)
+
+enable_warnings(cara_example_input)

@@ -5,6 +5,7 @@
 #include "cara_core/cara_core.h"
 #include "cara_platform/cara_platform.h"
 #include "cara_event/cara_event_manager.h"
+#include "cara_input/cara_input.h"
 
 //****************************************************************************
 // Types
@@ -255,6 +256,7 @@ static cara_status_t cara_core_do_update(cara_core_t *core, cara_app_t *app)
 			}
 
 			timer->update.accumulator -= timer->update.dt;
+			cara_input_clear_presses(core->cara->input);
 		}
 	}
 
@@ -326,6 +328,7 @@ static cara_status_t cara_core_do_mainloop(cara_core_t *core, cara_app_t *app)
 
 
 	while (!core->quit_requested) {
+
 		status = cara_platform_process_messages(platform);
 		if (status != CARA_STATUS_OK || core->quit_requested) {
 			return status;
