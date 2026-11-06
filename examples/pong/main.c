@@ -9,6 +9,7 @@
 #define UPS				60
 #define X_RESOLUTION	800
 #define Y_RESOLUTION	600
+#define PIXEL_COUNT		(X_RESOLUTION * Y_RESOLUTION)
 #define PONG_TITLE		"Pong"
 
 #define GAME_AREA_WIDTH		800.0
@@ -16,6 +17,8 @@
 
 #define SCOREBOARD_WIDTH	800.0
 #define SCOREBOARD_HEIGHT	100.0
+
+#define BACKGROUND_COLOR	0x00006000
 
 
 typedef struct {
@@ -32,7 +35,7 @@ typedef struct {
 
 typedef struct {
 	rect_t rect;
-	vec2_t velocity
+	vec2_t velocity;
 } ball_t;
 
 typedef struct {
@@ -59,10 +62,6 @@ typedef struct {
 } area_t;
 
 typedef struct {
-	area_t areas[AREA_COUNT];
-} layout_t;
-
-typedef struct {
 	uint32_t x;
 	uint32_t y;
 	uint32_t width;
@@ -70,16 +69,30 @@ typedef struct {
 } viewport_t;
 
 typedef struct {
-	area_t area;
-	viewport_t viewport;
+	area_t areas[AREA_COUNT];
+	viewport_t viewports[AREA_COUNT];
+} layout_t;
+
+typedef struct {
+	layout_t layouts[AREA_COUNT];
 	double scale_x;
 	double scale_y;
 } render_context_t;
 
 typedef struct {
 	cara_pixbuf_t framebuffer;
-	render_context_t contexts[AREA_COUNT]
+	render_context_t contexts[AREA_COUNT];
 } renderer_t;
+
+typedef struct {
+	ball_t ball;
+	player_t players[2];
+	bool is_running;
+
+	renderer_t renderer;
+
+	cara_t *cara;
+} pong_t;
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -104,6 +117,13 @@ static cara_status_t pong_event(
 );
 
 static cara_status_t pong_shutdown(cara_app_t *app);
+
+//////////////////////////////////////////////////////////////////////////////
+// Render declarations
+//////////////////////////////////////////////////////////////////////////////
+
+static void pong_render_scoreboard(pong_t *pong);
+static void pong_render_gameboard(pong_t *pong);
 
 //////////////////////////////////////////////////////////////////////////////
 // Main
@@ -150,17 +170,18 @@ int main(void)
 static cara_status_t pong_init(cara_app_t *app)
 {
 	pong_t *pong = app->data;
+	cara_pixbuf_t *framebuffer = &pong->renderer.framebuffer;
 
-	pong->pixbuf.pixels = calloc(
+	framebuffer->pixels = calloc(
 		X_RESOLUTION * Y_RESOLUTION, 
-		sizeof(*pong->pixbuf.pixels)
+		sizeof(*framebuffer->pixels)
 	);
-	if (!pong->pixbuf.pixels) {
+	if (!framebuffer->pixels) {
 		return CARA_STATUS_OUT_OF_MEMORY;
 	}
 
-	pong->pixbuf.height = Y_RESOLUTION;
-	pong->pixbuf.width = X_RESOLUTION;
+	framebuffer->height = Y_RESOLUTION;
+	framebuffer->width = X_RESOLUTION;
 
 	return CARA_STATUS_OK;
 }
@@ -181,13 +202,16 @@ static cara_status_t pong_render(
 )
 {
 	pong_t *pong = app->data;
-	*p_out_buffer = &pong->pixbuf;
+	cara_pixbuf_t *framebuffer = &pong->renderer.framebuffer;
 
-	memset(
-		pong->pixbuf.pixels, 
-		0, 
-		X_RESOLUTION * Y_RESOLUTION * sizeof(*pong->pixbuf.pixels)
-	);
+	*p_out_buffer = framebuffer;
+
+	for (uint32_t i = 0; i < PIXEL_COUNT; i++) {
+		framebuffer->pixels[i] = BACKGROUND_COLOR;
+	}
+
+	pong_render_scoreboard(pong);
+	pong_render_gameboard(pong);
 
 	return CARA_STATUS_OK;
 }
@@ -219,15 +243,11 @@ static cara_status_t pong_shutdown(cara_app_t *app)
 
 static void pong_render_scoreboard(pong_t *pong)
 {
-	;
+	(void) pong;
 }
 
 static void pong_render_gameboard(pong_t *pong)
 {
-	;
+	(void) pong;
 }
 
-static void pong_render_rect(cara_pixbuf_t *pixbuf, rect_t rect)
-{
-	;
-}
