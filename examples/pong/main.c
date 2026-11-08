@@ -34,7 +34,21 @@
 #define BACKGROUDN_COLOR_SCOREBOARD 0x00000060
 #define BACKGROUND_COLOR_GAME	    0x00006000
 #define PADDLE_COLOR		        0x00FFFFFF
-#define BALL_COLOR			        0x00FF0000
+#define BALL_COLOR			        0x00FF00FF
+
+
+typedef enum
+{
+	PLAYER_TYPE_HUMAN,
+    PLAYER_TYPE_AI,
+    PLAYER_TYPE_COUNT
+} player_type_t;
+
+typedef enum {
+	AREA_SCOREBOARD,
+	AREA_GAME,
+	AREA_COUNT
+} area_idx_t;
 
 
 typedef struct {
@@ -60,16 +74,11 @@ typedef struct {
 } paddle_t;
 
 typedef struct {
+    player_type_t type;
 	paddle_t paddle;
 	uint32_t score;
 } player_t;
 
-
-typedef enum {
-	AREA_SCOREBOARD,
-	AREA_GAME,
-	AREA_COUNT
-} area_idx_t;
 
 
 typedef struct {
@@ -195,13 +204,10 @@ int main(void)
 static cara_status_t pong_init(cara_app_t *app)
 {
 	pong_t *pong = app->data;
-	cara_pixbuf_t *framebuffer = &pong->renderer.framebuffer;
     renderer_t *renderer = &pong->renderer;
+	cara_pixbuf_t *framebuffer = &renderer->framebuffer;
 
-	framebuffer->pixels = calloc(
-		X_RESOLUTION * Y_RESOLUTION, 
-		sizeof(*framebuffer->pixels)
-	);
+	framebuffer->pixels = calloc(PIXEL_COUNT, sizeof(*framebuffer->pixels));
 	if (!framebuffer->pixels) {
 		return CARA_STATUS_OUT_OF_MEMORY;
 	}
@@ -209,33 +215,37 @@ static cara_status_t pong_init(cara_app_t *app)
 	framebuffer->height = Y_RESOLUTION;
 	framebuffer->width = X_RESOLUTION;
 
-    renderer->layouts[AREA_SCOREBOARD].area.width = SCOREBOARD_WIDTH;
-    renderer->layouts[AREA_SCOREBOARD].area.height = SCOREBOARD_HEIGHT;
-    renderer->layouts[AREA_SCOREBOARD].viewport.x = 0;
-    renderer->layouts[AREA_SCOREBOARD].viewport.y = 0;
-    renderer->layouts[AREA_SCOREBOARD].viewport.width = framebuffer->width;
-    renderer->layouts[AREA_SCOREBOARD].viewport.height = 100;
-    renderer->layouts[AREA_SCOREBOARD].scale_x = (double)renderer->layouts[AREA_SCOREBOARD].viewport.width / SCOREBOARD_WIDTH;
-    renderer->layouts[AREA_SCOREBOARD].scale_y = (double)renderer->layouts[AREA_SCOREBOARD].viewport.height / SCOREBOARD_HEIGHT;
+    layout_t *scoreboard_layout = &renderer->layouts[AREA_SCOREBOARD];
+    scoreboard_layout->area.width = SCOREBOARD_WIDTH;
+    scoreboard_layout->area.height = SCOREBOARD_HEIGHT;
+    scoreboard_layout->viewport.x = 0;
+    scoreboard_layout->viewport.y = 0;
+    scoreboard_layout->viewport.width = framebuffer->width;
+    scoreboard_layout->viewport.height = 100;
+    scoreboard_layout->scale_x = (double)scoreboard_layout->viewport.width / SCOREBOARD_WIDTH;
+    scoreboard_layout->scale_y = (double)scoreboard_layout->viewport.height / SCOREBOARD_HEIGHT;
 
-    renderer->layouts[AREA_GAME].area.width = GAME_AREA_WIDTH;
-    renderer->layouts[AREA_GAME].area.height = GAME_AREA_HEIGHT;
-    renderer->layouts[AREA_GAME].viewport.x = 0;
-    renderer->layouts[AREA_GAME].viewport.y = 100;
-    renderer->layouts[AREA_GAME].viewport.width = framebuffer->width;
-    renderer->layouts[AREA_GAME].viewport.height = 500;
-    renderer->layouts[AREA_GAME].scale_x = (double)renderer->layouts[AREA_GAME].viewport.width / GAME_AREA_WIDTH;
-    renderer->layouts[AREA_GAME].scale_y = (double)renderer->layouts[AREA_GAME].viewport.height / GAME_AREA_HEIGHT;
+    layout_t *game_layout = &renderer->layouts[AREA_GAME];
+    game_layout->area.width = GAME_AREA_WIDTH;
+    game_layout->area.height = GAME_AREA_HEIGHT;
+    game_layout->viewport.x = 0;
+    game_layout->viewport.y = 100;
+    game_layout->viewport.width = framebuffer->width;
+    game_layout->viewport.height = 500;
+    game_layout->scale_x = (double)game_layout->viewport.width / GAME_AREA_WIDTH;
+    game_layout->scale_y = (double)game_layout->viewport.height / GAME_AREA_HEIGHT;
 
     pong->players[0].paddle.rect.x = PADDLE_OFFSET;
     pong->players[0].paddle.rect.y = PADDLE_START_Y;
     pong->players[0].paddle.rect.width = PADDLE_WIDTH;
     pong->players[0].paddle.rect.height = PADDLE_HEIGHT;
+    pong->players[0].type = PLAYER_TYPE_HUMAN;
 
     pong->players[1].paddle.rect.x = GAME_AREA_WIDTH - PADDLE_OFFSET;
     pong->players[1].paddle.rect.y = PADDLE_START_Y;
     pong->players[1].paddle.rect.width = PADDLE_WIDTH;
     pong->players[1].paddle.rect.height = PADDLE_HEIGHT;
+    pong->players[1].type = PLAYER_TYPE_HUMAN;
 
     pong->ball.rect.x = BALL_START_X;
     pong->ball.rect.y = BALL_START_Y;
@@ -253,16 +263,33 @@ static cara_status_t pong_update(
 	(void) delta_time;
     pong_t *pong = app->data;
 
-    if (cara_key_down(pong->cara, KEY_W)) {
-        pong->players[0].paddle.rect.y -= PADDLE_SPEED * delta_time;
+    if (pong->players[0].type == PLAYER_TYPE_HUMAN) {
+        if (cara_key_down(pong->cara, KEY_W)) {
+            pong->players[0].paddle.rect.y -= PADDLE_SPEED * delta_time;
+        }
+        if (cara_key_down(pong->cara, KEY_S)) {
+            pong->players[0].paddle.rect.y += PADDLE_SPEED * delta_time;
+        }
         if (pong->players[0].paddle.rect.y < 0) {
             pong->players[0].paddle.rect.y = 0;
         }
-    }
-    if (cara_key_down(pong->cara, KEY_S)) {
-        pong->players[0].paddle.rect.y += PADDLE_SPEED * delta_time;
         if (pong->players[0].paddle.rect.y > GAME_AREA_HEIGHT - PADDLE_HEIGHT) {
             pong->players[0].paddle.rect.y = GAME_AREA_HEIGHT - PADDLE_HEIGHT;
+        }
+    }
+
+    if (pong->players[1].type == PLAYER_TYPE_HUMAN) {
+        if (cara_key_down(pong->cara, KEY_UP)) {
+            pong->players[1].paddle.rect.y -= PADDLE_SPEED * delta_time;
+        }
+        if (cara_key_down(pong->cara, KEY_DOWN)) {
+            pong->players[1].paddle.rect.y += PADDLE_SPEED * delta_time;
+        }
+        if (pong->players[1].paddle.rect.y < 0) {
+            pong->players[1].paddle.rect.y = 0;
+        }
+        if (pong->players[1].paddle.rect.y > GAME_AREA_HEIGHT - PADDLE_HEIGHT) {
+            pong->players[1].paddle.rect.y = GAME_AREA_HEIGHT - PADDLE_HEIGHT;
         }
     }
 
@@ -275,12 +302,11 @@ static cara_status_t pong_render(
 )
 {
 	pong_t *pong = app->data;
-	cara_pixbuf_t *framebuffer = &pong->renderer.framebuffer;
 
 	pong_render_scoreboard(pong);
 	pong_render_gameboard(pong);
 
-	*p_out_buffer = framebuffer;
+	*p_out_buffer = &pong->renderer.framebuffer;
 
 	return CARA_STATUS_OK;
 }
@@ -302,7 +328,12 @@ static cara_status_t pong_event(
 
 static cara_status_t pong_shutdown(cara_app_t *app)
 {
-	(void) app;
+    pong_t *pong = app->data;
+    renderer_t *renderer = &pong->renderer;
+    cara_pixbuf_t *framebuffer = &renderer->framebuffer;
+
+    free(framebuffer->pixels);
+
 	return CARA_STATUS_OK;
 }
 
@@ -371,7 +402,6 @@ static void pong_render_rect(
 
     uint32_t x0 = viewport->x + (uint32_t)(left * layout->scale_x);
     uint32_t y0 = viewport->y + (uint32_t)(top * layout->scale_y);
-
     uint32_t x1 = viewport->x + (uint32_t)ceil(right * layout->scale_x);
     uint32_t y1 = viewport->y + (uint32_t)ceil(bottom * layout->scale_y);
 
@@ -393,7 +423,6 @@ static void pong_render_fill_area(
 
     uint32_t x0 = viewport->x;
     uint32_t y0 = viewport->y;
-
     uint32_t x1 = x0 + viewport->width;
     uint32_t y1 = y0 + viewport->height;
 
@@ -402,5 +431,4 @@ static void pong_render_fill_area(
             framebuffer->pixels[y * framebuffer->width + x] = color;
         }
     }
-
 }
