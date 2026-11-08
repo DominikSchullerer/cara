@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <math.h>
 
 #include "cara/cara.h"
 
@@ -12,13 +13,28 @@
 #define PIXEL_COUNT		(X_RESOLUTION * Y_RESOLUTION)
 #define PONG_TITLE		"Pong"
 
-#define GAME_AREA_WIDTH		800.0
-#define GAME_AREA_HEIGHT	600.0
+#define GAME_AREA_WIDTH		1600.0
+#define GAME_AREA_HEIGHT	1000.0
 
-#define SCOREBOARD_WIDTH	800.0
-#define SCOREBOARD_HEIGHT	100.0
+#define PADDLE_WIDTH		20.0
+#define PADDLE_HEIGHT		100.0
+#define PADDLE_OFFSET		50.0
+#define PADDLE_START_Y		400.0
+#define PADDLE_SPEED		400.0
 
-#define BACKGROUND_COLOR	0x00006000
+#define BALL_WIDTH			20.0
+#define BALL_HEIGHT		    20.0
+#define BALL_START_X		790.0
+#define BALL_START_Y		490.0
+#define BALL_SPEED			400.0
+
+#define SCOREBOARD_WIDTH	1600.0
+#define SCOREBOARD_HEIGHT	200.0
+
+#define BACKGROUDN_COLOR_SCOREBOARD 0x00000060
+#define BACKGROUND_COLOR_GAME	    0x00006000
+#define PADDLE_COLOR		        0x00FFFFFF
+#define BALL_COLOR			        0x00FF0000
 
 
 typedef struct {
@@ -69,19 +85,15 @@ typedef struct {
 } viewport_t;
 
 typedef struct {
-	area_t areas[AREA_COUNT];
-	viewport_t viewports[AREA_COUNT];
+	area_t area;
+	viewport_t viewport;
+    double scale_x;
+    double scale_y;
 } layout_t;
 
 typedef struct {
-	layout_t layouts[AREA_COUNT];
-	double scale_x;
-	double scale_y;
-} render_context_t;
-
-typedef struct {
 	cara_pixbuf_t framebuffer;
-	render_context_t contexts[AREA_COUNT];
+    layout_t layouts[AREA_COUNT];
 } renderer_t;
 
 typedef struct {
@@ -124,6 +136,19 @@ static cara_status_t pong_shutdown(cara_app_t *app);
 
 static void pong_render_scoreboard(pong_t *pong);
 static void pong_render_gameboard(pong_t *pong);
+
+static void pong_render_rect(
+    renderer_t *renderer,
+    area_idx_t area_idx,
+    const rect_t *rect,
+    uint32_t color
+);
+
+static void pong_render_fill_area(
+    renderer_t *renderer,
+    area_idx_t area_idx,
+    uint32_t color
+);
 
 //////////////////////////////////////////////////////////////////////////////
 // Main
@@ -171,6 +196,7 @@ static cara_status_t pong_init(cara_app_t *app)
 {
 	pong_t *pong = app->data;
 	cara_pixbuf_t *framebuffer = &pong->renderer.framebuffer;
+    renderer_t *renderer = &pong->renderer;
 
 	framebuffer->pixels = calloc(
 		X_RESOLUTION * Y_RESOLUTION, 
@@ -183,6 +209,39 @@ static cara_status_t pong_init(cara_app_t *app)
 	framebuffer->height = Y_RESOLUTION;
 	framebuffer->width = X_RESOLUTION;
 
+    renderer->layouts[AREA_SCOREBOARD].area.width = SCOREBOARD_WIDTH;
+    renderer->layouts[AREA_SCOREBOARD].area.height = SCOREBOARD_HEIGHT;
+    renderer->layouts[AREA_SCOREBOARD].viewport.x = 0;
+    renderer->layouts[AREA_SCOREBOARD].viewport.y = 0;
+    renderer->layouts[AREA_SCOREBOARD].viewport.width = framebuffer->width;
+    renderer->layouts[AREA_SCOREBOARD].viewport.height = 100;
+    renderer->layouts[AREA_SCOREBOARD].scale_x = (double)renderer->layouts[AREA_SCOREBOARD].viewport.width / SCOREBOARD_WIDTH;
+    renderer->layouts[AREA_SCOREBOARD].scale_y = (double)renderer->layouts[AREA_SCOREBOARD].viewport.height / SCOREBOARD_HEIGHT;
+
+    renderer->layouts[AREA_GAME].area.width = GAME_AREA_WIDTH;
+    renderer->layouts[AREA_GAME].area.height = GAME_AREA_HEIGHT;
+    renderer->layouts[AREA_GAME].viewport.x = 0;
+    renderer->layouts[AREA_GAME].viewport.y = 100;
+    renderer->layouts[AREA_GAME].viewport.width = framebuffer->width;
+    renderer->layouts[AREA_GAME].viewport.height = 500;
+    renderer->layouts[AREA_GAME].scale_x = (double)renderer->layouts[AREA_GAME].viewport.width / GAME_AREA_WIDTH;
+    renderer->layouts[AREA_GAME].scale_y = (double)renderer->layouts[AREA_GAME].viewport.height / GAME_AREA_HEIGHT;
+
+    pong->players[0].paddle.rect.x = PADDLE_OFFSET;
+    pong->players[0].paddle.rect.y = PADDLE_START_Y;
+    pong->players[0].paddle.rect.width = PADDLE_WIDTH;
+    pong->players[0].paddle.rect.height = PADDLE_HEIGHT;
+
+    pong->players[1].paddle.rect.x = GAME_AREA_WIDTH - PADDLE_OFFSET;
+    pong->players[1].paddle.rect.y = PADDLE_START_Y;
+    pong->players[1].paddle.rect.width = PADDLE_WIDTH;
+    pong->players[1].paddle.rect.height = PADDLE_HEIGHT;
+
+    pong->ball.rect.x = BALL_START_X;
+    pong->ball.rect.y = BALL_START_Y;
+    pong->ball.rect.width = BALL_WIDTH;
+    pong->ball.rect.height = BALL_HEIGHT;
+
 	return CARA_STATUS_OK;
 }
 
@@ -191,8 +250,22 @@ static cara_status_t pong_update(
 	double delta_time
 )
 {
-	(void) app;
 	(void) delta_time;
+    pong_t *pong = app->data;
+
+    if (cara_key_down(pong->cara, KEY_W)) {
+        pong->players[0].paddle.rect.y -= PADDLE_SPEED * delta_time;
+        if (pong->players[0].paddle.rect.y < 0) {
+            pong->players[0].paddle.rect.y = 0;
+        }
+    }
+    if (cara_key_down(pong->cara, KEY_S)) {
+        pong->players[0].paddle.rect.y += PADDLE_SPEED * delta_time;
+        if (pong->players[0].paddle.rect.y > GAME_AREA_HEIGHT - PADDLE_HEIGHT) {
+            pong->players[0].paddle.rect.y = GAME_AREA_HEIGHT - PADDLE_HEIGHT;
+        }
+    }
+
 	return CARA_STATUS_OK;
 }
 
@@ -204,14 +277,10 @@ static cara_status_t pong_render(
 	pong_t *pong = app->data;
 	cara_pixbuf_t *framebuffer = &pong->renderer.framebuffer;
 
-	*p_out_buffer = framebuffer;
-
-	for (uint32_t i = 0; i < PIXEL_COUNT; i++) {
-		framebuffer->pixels[i] = BACKGROUND_COLOR;
-	}
-
 	pong_render_scoreboard(pong);
 	pong_render_gameboard(pong);
+
+	*p_out_buffer = framebuffer;
 
 	return CARA_STATUS_OK;
 }
@@ -243,11 +312,95 @@ static cara_status_t pong_shutdown(cara_app_t *app)
 
 static void pong_render_scoreboard(pong_t *pong)
 {
-	(void) pong;
+    pong_render_fill_area(
+        &pong->renderer,
+        AREA_SCOREBOARD,
+        BACKGROUDN_COLOR_SCOREBOARD
+    );
 }
 
 static void pong_render_gameboard(pong_t *pong)
 {
-	(void) pong;
+    pong_render_fill_area(
+        &pong->renderer,
+        AREA_GAME,
+        BACKGROUND_COLOR_GAME
+    );
+
+    pong_render_rect(
+        &pong->renderer,
+        AREA_GAME,
+        &pong->players[0].paddle.rect,
+        PADDLE_COLOR
+    );
+
+    pong_render_rect(
+        &pong->renderer,
+        AREA_GAME,
+        &pong->players[1].paddle.rect,
+        PADDLE_COLOR
+    );
+
+    pong_render_rect(
+        &pong->renderer,
+        AREA_GAME,
+        &pong->ball.rect,
+        BALL_COLOR
+    );
 }
 
+static void pong_render_rect(
+    renderer_t *renderer,
+    area_idx_t area_idx,
+    const rect_t *rect,
+    uint32_t color
+)
+{
+    cara_pixbuf_t *framebuffer = &renderer->framebuffer;
+    layout_t *layout = &renderer->layouts[area_idx];
+    viewport_t *viewport = &layout->viewport;
+
+    double left = fmax(rect->x, 0.0);
+    double top = fmax(rect->y, 0.0);
+    double right = fmin(rect->x + rect->width, layout->area.width);
+    double bottom = fmin(rect->y + rect->height, layout->area.height);
+
+    if (right <= left || bottom <= top) {
+        return;
+    }
+
+    uint32_t x0 = viewport->x + (uint32_t)(left * layout->scale_x);
+    uint32_t y0 = viewport->y + (uint32_t)(top * layout->scale_y);
+
+    uint32_t x1 = viewport->x + (uint32_t)ceil(right * layout->scale_x);
+    uint32_t y1 = viewport->y + (uint32_t)ceil(bottom * layout->scale_y);
+
+    for (uint32_t y = y0; y < y1; ++y) {
+        for (uint32_t x = x0; x < x1; ++x) {
+            framebuffer->pixels[y * framebuffer->width + x] = color;
+        }
+    }
+}
+
+static void pong_render_fill_area(
+    renderer_t *renderer,
+    area_idx_t area_idx,
+    uint32_t color
+)
+{
+    cara_pixbuf_t *framebuffer = &renderer->framebuffer;
+    viewport_t *viewport = &renderer->layouts[area_idx].viewport;
+
+    uint32_t x0 = viewport->x;
+    uint32_t y0 = viewport->y;
+
+    uint32_t x1 = x0 + viewport->width;
+    uint32_t y1 = y0 + viewport->height;
+
+    for (uint32_t y = y0; y < y1; ++y) {
+        for (uint32_t x = x0; x < x1; ++x) {
+            framebuffer->pixels[y * framebuffer->width + x] = color;
+        }
+    }
+
+}
