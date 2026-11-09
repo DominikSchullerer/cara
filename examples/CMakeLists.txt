@@ -45,6 +45,7 @@ enable_warnings(cara_example_input)
 
 add_executable(pong
     pong/main.c
+    pong/pong_renderer.c
 )
 
 target_link_libraries(pong
