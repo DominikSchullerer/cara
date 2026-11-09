@@ -271,7 +271,7 @@ static bool rects_collide(rect_t *rect_1, rect_t *rect_2)
     if (rect_1->y > rect_2->y + rect_2->height) {
         return false;
     }
-    if (rect_1->y + rect_1->height < rect_2->height) {
+    if (rect_1->y + rect_1->height < rect_2->y) {
         return false;
     }
 
