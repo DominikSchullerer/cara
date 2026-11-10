@@ -8,6 +8,7 @@
 #include "pong_constants.h"
 #include "pong_types.h"
 #include "pong_renderer.h"
+#include "pong_update.h"
 
 //////////////////////////////////////////////////////////////////////////////
 // Callback declarations
@@ -15,28 +16,12 @@
 
 static cara_status_t pong_init(cara_app_t *app);
 
-static cara_status_t pong_update(
-	cara_app_t *app, 
-	double delta_time
-);
-
-static cara_status_t pong_render(
-	cara_app_t *app, 
-	const cara_pixbuf_t **p_out_buffer
-);
-
 static cara_status_t pong_event(
 	cara_app_t *app, 
 	cara_event_t event
 );
 
 static cara_status_t pong_shutdown(cara_app_t *app);
-
-
-//////////////////////////////////////////////////////////////////////////////
-
-static void ball_move(pong_t *pong, double_t delta_time);
-static bool rects_collide(rect_t *rect_1, rect_t *rect_2);
 
 //////////////////////////////////////////////////////////////////////////////
 // Main
@@ -114,20 +99,18 @@ static cara_status_t pong_init(cara_app_t *app)
     game_layout->scale_x = (double)game_layout->viewport.width / GAME_AREA_WIDTH;
     game_layout->scale_y = (double)game_layout->viewport.height / GAME_AREA_HEIGHT;
 
-    pong->players[0].paddle.rect.x = PADDLE_OFFSET;
-    pong->players[0].paddle.rect.y = PADDLE_START_Y;
+    pong->players[0].paddle.rect.upper_left.x = PADDLE_OFFSET;
+    pong->players[0].paddle.rect.upper_left.y = PADDLE_START_Y;
     pong->players[0].paddle.rect.width = PADDLE_WIDTH;
     pong->players[0].paddle.rect.height = PADDLE_HEIGHT;
-    pong->players[0].type = PLAYER_TYPE_HUMAN;
 
-    pong->players[1].paddle.rect.x = GAME_AREA_WIDTH - PADDLE_OFFSET;
-    pong->players[1].paddle.rect.y = PADDLE_START_Y;
+    pong->players[1].paddle.rect.upper_left.x = GAME_AREA_WIDTH - PADDLE_OFFSET;
+    pong->players[1].paddle.rect.upper_left.y = PADDLE_START_Y;
     pong->players[1].paddle.rect.width = PADDLE_WIDTH;
     pong->players[1].paddle.rect.height = PADDLE_HEIGHT;
-    pong->players[1].type = PLAYER_TYPE_HUMAN;
 
-    pong->ball.rect.x = BALL_START_X;
-    pong->ball.rect.y = BALL_START_Y;
+    pong->ball.rect.upper_left.x = BALL_START_X;
+    pong->ball.rect.upper_left.y = BALL_START_Y;
     pong->ball.rect.width = BALL_WIDTH;
     pong->ball.rect.height = BALL_HEIGHT;
 
@@ -135,63 +118,11 @@ static cara_status_t pong_init(cara_app_t *app)
     pong->ball.velocity.x = 300;
     pong->ball.velocity.y = 400;
 
-	return CARA_STATUS_OK;
-}
-
-static cara_status_t pong_update(
-	cara_app_t *app,
-	double delta_time
-)
-{
-	(void) delta_time;
-    pong_t *pong = app->data;
-
-    if (pong->players[0].type == PLAYER_TYPE_HUMAN) {
-        if (cara_key_down(pong->cara, KEY_W)) {
-            pong->players[0].paddle.rect.y -= PADDLE_SPEED * delta_time;
-        }
-        if (cara_key_down(pong->cara, KEY_S)) {
-            pong->players[0].paddle.rect.y += PADDLE_SPEED * delta_time;
-        }
-        if (pong->players[0].paddle.rect.y < 0) {
-            pong->players[0].paddle.rect.y = 0;
-        }
-        if (pong->players[0].paddle.rect.y > GAME_AREA_HEIGHT - PADDLE_HEIGHT) {
-            pong->players[0].paddle.rect.y = GAME_AREA_HEIGHT - PADDLE_HEIGHT;
-        }
-    }
-
-    if (pong->players[1].type == PLAYER_TYPE_HUMAN) {
-        if (cara_key_down(pong->cara, KEY_UP)) {
-            pong->players[1].paddle.rect.y -= PADDLE_SPEED * delta_time;
-        }
-        if (cara_key_down(pong->cara, KEY_DOWN)) {
-            pong->players[1].paddle.rect.y += PADDLE_SPEED * delta_time;
-        }
-        if (pong->players[1].paddle.rect.y < 0) {
-            pong->players[1].paddle.rect.y = 0;
-        }
-        if (pong->players[1].paddle.rect.y > GAME_AREA_HEIGHT - PADDLE_HEIGHT) {
-            pong->players[1].paddle.rect.y = GAME_AREA_HEIGHT - PADDLE_HEIGHT;
-        }
-    }
-
-    ball_move(pong, delta_time);
-
-	return CARA_STATUS_OK;
-}
-
-static cara_status_t pong_render(
-	cara_app_t *app,
-	const cara_pixbuf_t **p_out_buffer
-)
-{
-	pong_t *pong = app->data;
-
-	pong_render_scoreboard(pong);
-	pong_render_gameboard(pong);
-
-	*p_out_buffer = &pong->renderer.framebuffer;
+    pong->control.player_controls[0].up = KEY_W;
+    pong->control.player_controls[0].down = KEY_S;
+    pong->control.player_controls[1].up = KEY_UP;
+    pong->control.player_controls[1].down = KEY_DOWN;
+    pong->control.exit = KEY_ESCAPE;
 
 	return CARA_STATUS_OK;
 }
@@ -206,6 +137,7 @@ static cara_status_t pong_event(
 	switch (event.type) {
 		case CARA_CLOSE_REQUEST:
 			cara_request_quit(pong->cara);
+            break;
 	}
 
 	return CARA_STATUS_OK;
@@ -222,58 +154,3 @@ static cara_status_t pong_shutdown(cara_app_t *app)
 	return CARA_STATUS_OK;
 }
 
-//////////////////////////////////////////////////////////////////////////////
-
-// ToDo: reflect instead of set to 0
-static void ball_move(pong_t *pong, double_t delta_time)
-{
-    pong->ball.rect.x += pong->ball.velocity.x * delta_time;
-    pong->ball.rect.y += pong->ball.velocity.y * delta_time;
-
-    if (pong->ball.rect.y < 0) {
-        pong->ball.rect.y = 0;
-        pong->ball.velocity.y *= -1;
-    }
-    if (pong->ball.rect.y > GAME_AREA_HEIGHT - BALL_HEIGHT) {
-        pong->ball.rect.y = GAME_AREA_HEIGHT - BALL_HEIGHT;
-        pong->ball.velocity.y *= -1;
-    }
-
-    if (rects_collide(&pong->ball.rect, &pong->players[0].paddle.rect)) {
-        pong->ball.velocity.x *= -1;
-        pong->ball.rect.x = pong->players[0].paddle.rect.x + pong->players[0].paddle.rect.width;
-    }
-    if (rects_collide(&pong->ball.rect, &pong->players[1].paddle.rect)) {
-        pong->ball.velocity.x *= -1;
-        pong->ball.rect.x = pong->players[1].paddle.rect.x - pong->ball.rect.width;
-    }
-
-    // ToDo: Remove and add Scoring logic /
-    if (pong->ball.rect.x < 0) {
-        pong->ball.rect.x = 0;
-        pong->ball.velocity.x *= -1;
-    }
-    if (pong->ball.rect.x > GAME_AREA_WIDTH - BALL_WIDTH) {
-        pong->ball.rect.x = GAME_AREA_WIDTH - BALL_WIDTH;
-        pong->ball.velocity.x *= -1;
-    }
-}
-
-
-static bool rects_collide(rect_t *rect_1, rect_t *rect_2)
-{
-    if (rect_1->x > rect_2->x + rect_2->width) {
-        return false;
-    }
-    if (rect_1->x + rect_1->width < rect_2->x) {
-        return false;
-    }
-    if (rect_1->y > rect_2->y + rect_2->height) {
-        return false;
-    }
-    if (rect_1->y + rect_1->height < rect_2->y) {
-        return false;
-    }
-
-    return true;
-}

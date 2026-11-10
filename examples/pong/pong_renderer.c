@@ -8,6 +8,8 @@
 #include "pong_constants.h"
 #include "pong_types.h"
 
+static void pong_render_scoreboard(pong_t *pong);
+static void pong_render_gameboard(pong_t *pong);
 
 static void pong_render_rect(
     renderer_t *renderer,
@@ -22,8 +24,26 @@ static void pong_render_fill_area(
     uint32_t color
 );
 
+//////////////////////////////////////////////////////////////////////////////
 
-void pong_render_scoreboard(pong_t *pong)
+cara_status_t pong_render(
+    cara_app_t *app,
+    const cara_pixbuf_t **p_out_buffer
+)
+{
+    pong_t *pong = app->data;
+
+    pong_render_scoreboard(pong);
+    pong_render_gameboard(pong);
+
+    *p_out_buffer = &pong->renderer.framebuffer;
+
+    return CARA_STATUS_OK;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
+static void pong_render_scoreboard(pong_t *pong)
 {
     pong_render_fill_area(
         &pong->renderer,
@@ -33,7 +53,7 @@ void pong_render_scoreboard(pong_t *pong)
 }
 
 
-void pong_render_gameboard(pong_t *pong)
+static void pong_render_gameboard(pong_t *pong)
 {
     pong_render_fill_area(
         &pong->renderer,
@@ -74,10 +94,10 @@ static void pong_render_rect(
     layout_t *layout = &renderer->layouts[area_idx];
     viewport_t *viewport = &layout->viewport;
 
-    double left = fmax(rect->x, 0.0);
-    double top = fmax(rect->y, 0.0);
-    double right = fmin(rect->x + rect->width, layout->area.width);
-    double bottom = fmin(rect->y + rect->height, layout->area.height);
+    double left = fmax(rect->upper_left.x, 0.0);
+    double top = fmax(rect->upper_left.y, 0.0);
+    double right = fmin(rect->upper_left.x + rect->width, layout->area.width);
+    double bottom = fmin(rect->upper_left.y + rect->height, layout->area.height);
 
     if (right <= left || bottom <= top) {
         return;

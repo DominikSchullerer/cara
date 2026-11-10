@@ -1,12 +1,8 @@
 #ifndef PONG_TYPES_INCLUDED
 #define PONG_TYPES_INCLUDED
 
-typedef enum
-{
-	PLAYER_TYPE_HUMAN,
-	PLAYER_TYPE_AI,
-	PLAYER_TYPE_COUNT
-} player_type_t;
+#include <stdbool.h>
+#include <cara/cara.h>
 
 typedef enum {
 	AREA_SCOREBOARD,
@@ -14,6 +10,12 @@ typedef enum {
 	AREA_COUNT
 } area_idx_t;
 
+typedef enum {
+	COLLISION_NONE,
+	COLLISION_WALL,
+	COLLISION_PADDLE,
+	COLLISION_SCORE
+} collision_type_t;
 
 
 typedef struct {
@@ -22,8 +24,7 @@ typedef struct {
 } vec2_t;
 
 typedef struct {
-	double x;
-	double y;
+	vec2_t upper_left;
 	double width;
 	double height;
 } rect_t;
@@ -35,14 +36,21 @@ typedef struct {
 
 typedef struct {
 	rect_t rect;
-	double speed;
+	vec2_t velocity;
 } paddle_t;
 
 typedef struct {
-	player_type_t type;
 	paddle_t paddle;
 	uint32_t score;
 } player_t;
+
+typedef struct {
+	collision_type_t type;
+	vec2_t normal_vect;
+	double time;
+} collision_t;
+
+
 
 typedef struct {
 	double width;
@@ -68,10 +76,24 @@ typedef struct {
 	layout_t layouts[AREA_COUNT];
 } renderer_t;
 
+
+typedef struct {
+	cara_key_t up;
+	cara_key_t down;
+} player_control_t;
+
+typedef struct {
+	player_control_t player_controls[2];
+	cara_key_t exit;
+} control_t;
+
+
 typedef struct {
 	ball_t ball;
 	player_t players[2];
 	bool is_running;
+
+	control_t control;
 
 	renderer_t renderer;
 
