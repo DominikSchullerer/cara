@@ -4,10 +4,11 @@
 #include "pong_types.h"
 #include "pong_update.h"
 #include "pong_constants.h"
+#include "pong_physics.h"
 
 //////////////////////////////////////////////////////////////////////////////
 
-static void handle_player_input(pong_t *pong, size_t player_id, double delta_time);
+static void handle_player_input(pong_t *pong, size_t player_id);
 static void ball_move(pong_t *pong, double delta_time);
 static bool rects_collide(rect_t *rect_1, rect_t *rect_2);
 
@@ -26,10 +27,10 @@ cara_status_t pong_update(
         return CARA_STATUS_OK;
     }
 
-    handle_player_input(pong, 0, delta_time);
-    handle_player_input(pong, 1, delta_time);
+    handle_player_input(pong, 0);
+    handle_player_input(pong, 1);
 
-    ball_move(pong, delta_time);
+    simulate_physics(pong, delta_time);
 
     return CARA_STATUS_OK;
 }
@@ -37,22 +38,17 @@ cara_status_t pong_update(
 //////////////////////////////////////////////////////////////////////////////
 
 
-static void handle_player_input(pong_t *pong, size_t player_id, double delta_time)
+static void handle_player_input(pong_t *pong, size_t player_id)
 {
     player_control_t *player_control = &pong->control.player_controls[player_id];
     player_t *player = &pong->players[player_id];
+    player->paddle.velocity.x = 0;
 
     if (cara_key_down(pong->cara, player_control->up)) {
-        player->paddle.rect.upper_left.y -= PADDLE_SPEED * delta_time;
+        player->paddle.velocity.y = -1 * PADDLE_SPEED;
     }
     if (cara_key_down(pong->cara, player_control->down)) {
-        player->paddle.rect.upper_left.y += PADDLE_SPEED * delta_time;
-    }
-    if (player->paddle.rect.upper_left.y < 0) {
-        player->paddle.rect.upper_left.y = 0;
-    }
-    if (player->paddle.rect.upper_left.y > GAME_AREA_HEIGHT - PADDLE_HEIGHT) {
-        player->paddle.rect.upper_left.y = GAME_AREA_HEIGHT - PADDLE_HEIGHT;
+        player->paddle.velocity.y = PADDLE_SPEED;
     }
 }
 

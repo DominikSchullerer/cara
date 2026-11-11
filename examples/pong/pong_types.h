@@ -12,9 +12,10 @@ typedef enum {
 
 typedef enum {
 	COLLISION_NONE,
-	COLLISION_WALL,
-	COLLISION_PADDLE,
-	COLLISION_SCORE
+	COLLISION_BALL_WALL,
+	COLLISION_BALL_PADDLE,
+	COLLISION_BALL_SCORE,
+	COLLISION_PADDLE_WALL
 } collision_type_t;
 
 
@@ -48,6 +49,7 @@ typedef struct {
 	collision_type_t type;
 	vec2_t normal_vect;
 	double time;
+	uint32_t index;
 } collision_t;
 
 
