@@ -76,8 +76,11 @@ static bool handle_collision(pong_t *pong, collision_t *collision)
 	switch (collision->type) {
 		case COLLISION_BALL_SCORE:
 			// ToDo scoring logic + reset game etc.
-			pong->ball.velocity.x *= -1;
-			pong->players[collision->index].score += 1;
+			pong->ball.rect.upper_left.x = BALL_START_X;
+			pong->ball.rect.upper_left.y = BALL_START_Y;
+			pong->ball.velocity.x = 0.0;
+			pong->ball.velocity.y = 0.0;
+			pong->is_running = false;
 			break;
 		case COLLISION_BALL_WALL:
 			pong->ball.velocity.y *= -1;

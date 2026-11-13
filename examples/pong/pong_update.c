@@ -26,6 +26,13 @@ cara_status_t pong_update(
         cara_request_quit(pong->cara);
         return CARA_STATUS_OK;
     }
+    if (cara_key_down(pong->cara, pong->control.start)) {
+        if (!pong->is_running) {
+            pong->ball.velocity.x = 300;
+            pong->ball.velocity.y = 400;
+            pong->is_running = true;
+        }
+    }
 
     handle_player_input(pong, 0);
     handle_player_input(pong, 1);

@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
+#include <time.h>
 
 #include "cara/cara.h"
 
@@ -30,6 +31,7 @@ static cara_status_t pong_shutdown(cara_app_t *app);
 int main(void)
 {
 	pong_t pong = {0};
+	srand((unsigned int)time(NULL));
 
 	cara_app_t pong_app = {
 		.data = &pong,
@@ -109,20 +111,19 @@ static cara_status_t pong_init(cara_app_t *app)
     pong->players[1].paddle.rect.width = PADDLE_WIDTH;
     pong->players[1].paddle.rect.height = PADDLE_HEIGHT;
 
-    pong->ball.rect.upper_left.x = BALL_START_X;
-    pong->ball.rect.upper_left.y = BALL_START_Y;
     pong->ball.rect.width = BALL_WIDTH;
     pong->ball.rect.height = BALL_HEIGHT;
-
-    // ToDo: better starting velocity
-    pong->ball.velocity.x = 300;
-    pong->ball.velocity.y = 400;
+	pong->ball.rect.upper_left.x = BALL_START_X;
+	pong->ball.rect.upper_left.y = BALL_START_Y;
 
     pong->control.player_controls[0].up = KEY_W;
     pong->control.player_controls[0].down = KEY_S;
     pong->control.player_controls[1].up = KEY_UP;
     pong->control.player_controls[1].down = KEY_DOWN;
     pong->control.exit = KEY_ESCAPE;
+	pong->control.start = KEY_ENTER;
+
+	pong->is_running = false;
 
 	return CARA_STATUS_OK;
 }

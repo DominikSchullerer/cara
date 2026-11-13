@@ -87,6 +87,7 @@ typedef struct {
 typedef struct {
 	player_control_t player_controls[2];
 	cara_key_t exit;
+	cara_key_t start;
 } control_t;
 
 
