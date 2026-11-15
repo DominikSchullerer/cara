@@ -81,20 +81,43 @@ static bool handle_collision(pong_t *pong, collision_t *collision)
 			pong->ball.velocity.x = 0.0;
 			pong->ball.velocity.y = 0.0;
 			pong->is_running = false;
+            pong->players[collision->index].score += 1;
 			break;
 		case COLLISION_BALL_WALL:
 			pong->ball.velocity.y *= -1;
 			break;
 		case COLLISION_BALL_PADDLE:
 		{
-			vec2_t *velocity = &pong->ball.velocity;
-			vec2_t normal = collision->normal_vect;
+            paddle_t *paddle = &pong->players[collision->index].paddle;
 
-			double dot = velocity->x * normal.x
-				+ velocity->y * normal.y;
+            double paddle_center = paddle->rect.upper_left.y + paddle->rect.height / 2.0;
+            double ball_center = pong->ball.rect.upper_left.y + pong->ball.rect.height / 2.0;
+            double impact = (ball_center - paddle_center) / (paddle->rect.height / 2.0);
 
-			velocity->x -= 2.0 * dot * normal.x;
-			velocity->y -= 2.0 * dot * normal.y;
+            impact = fmax(-1.0, fmin(1.0, impact));
+
+            vec2_t normal = collision->normal_vect;
+            vec2_t *velocity = &pong->ball.velocity;
+
+            double dot = velocity->x * normal.x + velocity->y * normal.y;
+
+            velocity->x -= 2.0 * dot * normal.x;
+            velocity->y -= 2.0 * dot * normal.y;
+
+            if (normal.x == 0.0) {
+                break;
+            }
+
+            double speed = hypot(velocity->x, velocity->y) * 1.05;
+            double deflection = impact * 0.5;
+
+            velocity->y += deflection * speed;
+
+            double new_speed = hypot(velocity->x, velocity->y);
+
+            velocity->x *= speed / new_speed;
+            velocity->y *= speed / new_speed;
+
 			break;
 		}
 		case COLLISION_PADDLE_WALL:

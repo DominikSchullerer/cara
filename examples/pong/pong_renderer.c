@@ -7,6 +7,7 @@
 
 #include "pong_constants.h"
 #include "pong_types.h"
+#include "pong_digit_bitmaps.h"
 
 static void pong_render_scoreboard(pong_t *pong);
 static void pong_render_gameboard(pong_t *pong);
@@ -21,6 +22,38 @@ static void pong_render_rect(
 static void pong_render_fill_area(
     renderer_t *renderer,
     area_idx_t area_idx,
+    uint32_t color
+);
+
+static void pong_render_digit(
+    renderer_t *renderer,
+    area_idx_t area_idx,
+    uint32_t digit,
+    double x_offset,
+    double y_offset,
+    double size,
+    uint32_t color
+);
+
+static void pong_render_number_left(
+    renderer_t *renderer,
+    area_idx_t area_idx,
+    uint32_t number,
+    double x,
+    double y,
+    double scale,
+    double spacing,
+    uint32_t color
+);
+
+static void render_number_right(
+    renderer_t *renderer,
+    area_idx_t area_idx,
+    uint32_t number,
+    double x,
+    double y,
+    double scale,
+    double spacing,
     uint32_t color
 );
 
@@ -48,7 +81,29 @@ static void pong_render_scoreboard(pong_t *pong)
     pong_render_fill_area(
         &pong->renderer,
         AREA_SCOREBOARD,
-        BACKGROUDN_COLOR_SCOREBOARD
+        BACKGROUND_COLOR_SCOREBOARD
+    );
+
+    pong_render_number_left(
+        &pong->renderer,
+        AREA_SCOREBOARD,
+        pong->players[0].score,
+        30.0,
+        30.0,
+        20.0,
+        10.0,
+        SCORE_COLOR
+    );
+
+    render_number_right(
+        &pong->renderer,
+        AREA_SCOREBOARD,
+        pong->players[1].score,
+        SCOREBOARD_WIDTH - 30.0,
+        30.0,
+        20.0,
+        10.0,
+        SCORE_COLOR
     );
 }
 
@@ -133,5 +188,105 @@ static void pong_render_fill_area(
         for (uint32_t x = x0; x < x1; ++x) {
             framebuffer->pixels[y * framebuffer->width + x] = color;
         }
+    }
+}
+
+static void pong_render_digit(
+    renderer_t *renderer,
+    area_idx_t area_idx,
+    uint32_t digit,
+    double x_offset,
+    double y_offset,
+    double size,
+    uint32_t color
+)
+{
+    if (digit > 9) {
+        return;
+    }
+
+    const char (*digit_pattern)[DIGIT_HEIGHT][DIGIT_WIDTH] = &DIGIT_BITMAPS[digit];
+
+    for (uint32_t y = 0; y < DIGIT_HEIGHT; y++) {
+        for (uint32_t x = 0; x < DIGIT_WIDTH; x++) {
+            if ((*digit_pattern)[y][x]) {
+                rect_t pixel_rect = {
+                    .upper_left.x = x_offset + x * size,
+                    .upper_left.y = y_offset + y * size,
+                    .width = size,
+                    .height = size
+                };
+                pong_render_rect(renderer, area_idx, &pixel_rect, color);
+            }
+        }
+    }
+}
+
+static void pong_render_number_left(
+    renderer_t *renderer,
+    area_idx_t area_idx,
+    uint32_t number,
+    double x,
+    double y,
+    double scale,
+    double spacing,
+    uint32_t color
+)
+{
+    uint8_t digits[4];
+    uint32_t count = 0;
+
+    do {
+        digits[count] = number % 10;
+        count += 1;
+        number /= 10;
+    } while (number > 0 && count < 4);
+
+    double digit_advance = DIGIT_WIDTH * scale + spacing;
+
+    for (uint32_t i = 0; i < count; ++i) {
+        pong_render_digit(
+            renderer,
+            area_idx,
+            digits[count - 1 - i],
+            x + i * digit_advance,
+            y,
+            scale,
+            color
+        );
+    }
+}
+
+static void render_number_right(
+    renderer_t *renderer,
+    area_idx_t area_idx,
+    uint32_t number,
+    double x,
+    double y,
+    double scale,
+    double spacing,
+    uint32_t color
+)
+{
+    uint8_t digits[4];
+    uint32_t count = 0;
+    do {
+        digits[count] = number % 10;
+        count += 1;
+        number /= 10;
+    } while (number > 0 && count < 4);
+
+    double digit_advance = DIGIT_WIDTH * scale + spacing;
+
+    for (uint32_t i = 0; i < count; ++i) {
+        pong_render_digit(
+            renderer,
+            area_idx,
+            digits[count - 1 - i],
+            x - (count - 1 - i) * digit_advance - DIGIT_WIDTH * scale,
+            y,
+            scale,
+            color
+        );
     }
 }

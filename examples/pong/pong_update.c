@@ -50,6 +50,7 @@ static void handle_player_input(pong_t *pong, size_t player_id)
     player_control_t *player_control = &pong->control.player_controls[player_id];
     player_t *player = &pong->players[player_id];
     player->paddle.velocity.x = 0;
+    player->paddle.velocity.y = 0;
 
     if (cara_key_down(pong->cara, player_control->up)) {
         player->paddle.velocity.y = -1 * PADDLE_SPEED;

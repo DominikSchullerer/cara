@@ -105,11 +105,13 @@ static cara_status_t pong_init(cara_app_t *app)
     pong->players[0].paddle.rect.upper_left.y = PADDLE_START_Y;
     pong->players[0].paddle.rect.width = PADDLE_WIDTH;
     pong->players[0].paddle.rect.height = PADDLE_HEIGHT;
+    pong->players[0].score = 0;
 
     pong->players[1].paddle.rect.upper_left.x = GAME_AREA_WIDTH - PADDLE_OFFSET;
     pong->players[1].paddle.rect.upper_left.y = PADDLE_START_Y;
     pong->players[1].paddle.rect.width = PADDLE_WIDTH;
     pong->players[1].paddle.rect.height = PADDLE_HEIGHT;
+    pong->players[1].score = 0;
 
     pong->ball.rect.width = BALL_WIDTH;
     pong->ball.rect.height = BALL_HEIGHT;
@@ -124,6 +126,7 @@ static cara_status_t pong_init(cara_app_t *app)
 	pong->control.start = KEY_ENTER;
 
 	pong->is_running = false;
+
 
 	return CARA_STATUS_OK;
 }
