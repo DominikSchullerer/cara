@@ -1,45 +1,36 @@
-
 add_executable(cara_example_minimal
     minimal/main.c
 )
-
 target_link_libraries(cara_example_minimal
     PRIVATE cara
 )
-
 enable_warnings(cara_example_minimal)
 
 
 add_executable(cara_example_events
     events/main.c
 )
-
 target_link_libraries(cara_example_events
     PRIVATE cara
 )
-
 enable_warnings(cara_example_events)
 
 
 add_executable(cara_example_render
     render/main.c
 )
-
 target_link_libraries(cara_example_render
     PRIVATE cara
 )
-
 enable_warnings(cara_example_render)
 
 
 add_executable(cara_example_input
     input/main.c
 )
-
 target_link_libraries(cara_example_input
     PRIVATE cara
 )
-
 enable_warnings(cara_example_input)
 
 
@@ -49,9 +40,20 @@ add_executable(pong
     pong/pong_update.c
     pong/pong_physics.c
 )
-
 target_link_libraries(pong
     PRIVATE cara
 )
-
 enable_warnings(pong)
+
+
+add_executable(pong_extended
+    pong_extended/main.c
+    pong_extended/pong_renderer.c
+    pong_extended/pong_update.c
+    pong_extended/pong_physics.c
+)
+target_link_libraries(pong_extended
+    PRIVATE cara
+)
+enable_warnings(pong_extended)
+
